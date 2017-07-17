@@ -17,6 +17,15 @@
  
          if (this.field_71475_ae != null)
          {
+@@ -543,7 +542,7 @@
+     private void func_175609_am() throws LWJGLException
+     {
+         Display.setResizable(true);
+-        Display.setTitle("Minecraft 1.8");
++        Display.setTitle("我的世界 1.8");
+ 
+         try
+         {
 @@ -891,11 +890,6 @@
  
      public void func_147108_a(GuiScreen p_147108_1_)

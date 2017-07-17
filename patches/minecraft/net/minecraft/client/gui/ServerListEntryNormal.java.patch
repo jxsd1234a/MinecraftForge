@@ -1,6 +1,29 @@
 --- ../src-base/minecraft/net/minecraft/client/gui/ServerListEntryNormal.java
 +++ ../src-work/minecraft/net/minecraft/client/gui/ServerListEntryNormal.java
-@@ -82,7 +82,7 @@
+@@ -16,6 +16,7 @@
+ import net.minecraft.client.renderer.GlStateManager;
+ import net.minecraft.client.renderer.texture.DynamicTexture;
+ import net.minecraft.client.renderer.texture.TextureUtil;
++import net.minecraft.client.resources.I18n;
+ import net.minecraft.util.EnumChatFormatting;
+ import net.minecraft.util.ResourceLocation;
+ import net.minecraftforge.fml.relauncher.Side;
+@@ -67,12 +68,12 @@
+                     catch (UnknownHostException var2)
+                     {
+                         ServerListEntryNormal.this.field_148301_e.field_78844_e = -1L;
+-                        ServerListEntryNormal.this.field_148301_e.field_78843_d = EnumChatFormatting.DARK_RED + "Can\'t resolve hostname";
++                        ServerListEntryNormal.this.field_148301_e.field_78843_d = EnumChatFormatting.DARK_RED + I18n.func_135052_a("mc.chinaversion.cannot_resolve_hostname", new Object[0]);
+                     }
+                     catch (Exception var3)
+                     {
+                         ServerListEntryNormal.this.field_148301_e.field_78844_e = -1L;
+-                        ServerListEntryNormal.this.field_148301_e.field_78843_d = EnumChatFormatting.DARK_RED + "Can\'t connect to server.";
++                        ServerListEntryNormal.this.field_148301_e.field_78843_d = EnumChatFormatting.DARK_RED + I18n.func_135052_a("mc.chinaversion.cannot_connect_server", new Object[0]);
+                     }
+                 }
+             });
+@@ -82,7 +83,7 @@
          boolean flag1 = this.field_148301_e.field_82821_f < 47;
          boolean flag2 = flag || flag1;
          this.field_148300_d.field_71466_p.func_78276_b(this.field_148301_e.field_78847_a, p_180790_2_ + 32 + 3, p_180790_3_ + 1, 16777215);
@@ -9,7 +32,7 @@
  
          for (int i = 0; i < Math.min(list.size(), 2); ++i)
          {
-@@ -176,6 +176,11 @@
+@@ -176,6 +177,11 @@
          int i1 = p_180790_6_ - p_180790_2_;
          int j1 = p_180790_7_ - p_180790_3_;
  

@@ -128,7 +128,7 @@ public class GuiConfigEntries extends GuiListExtended
                     }
                     catch (Throwable e)
                     {
-                        FMLLog.log.fatal("There was a critical error instantiating the custom IConfigEntry for config element {}.", configElement.getName());
+                        FMLLog.severe("There was a critical error instantiating the custom IConfigEntry for config element %s.", configElement.getName());
                         e.printStackTrace();
                     }
                 else if (configElement.isProperty())

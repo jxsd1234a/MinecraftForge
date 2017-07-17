@@ -71,7 +71,7 @@ public class GuiJava8Error extends GuiErrorBase
             }
             catch (Exception e)
             {
-                FMLLog.log.error("Problem launching browser", e);
+                FMLLog.log(Level.ERROR, e, "Problem launching browser");
             }
         }
         else

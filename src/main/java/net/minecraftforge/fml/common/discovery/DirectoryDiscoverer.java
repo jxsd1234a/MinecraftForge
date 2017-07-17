@@ -59,7 +59,7 @@ public class DirectoryDiscoverer implements ITypeDiscoverer
     {
         this.table = table;
         List<ModContainer> found = Lists.newArrayList();
-        FMLLog.log.debug("Examining directory {} for potential mods", candidate.getModContainer().getName());
+        FMLLog.fine("Examining directory %s for potential mods", candidate.getModContainer().getName());
         exploreFileSystem("", candidate.getModContainer(), found, candidate, null);
         for (ModContainer mc : found)
         {
@@ -84,12 +84,12 @@ public class DirectoryDiscoverer implements ITypeDiscoverer
                 {
                     IOUtils.closeQuietly(fis);
                 }
-                FMLLog.log.debug("Found an mcmod.info file in directory {}", modDir.getName());
+                FMLLog.fine("Found an mcmod.info file in directory %s", modDir.getName());
             }
             catch (Exception e)
             {
                 mc = MetadataCollection.from(null,"");
-                FMLLog.log.debug("No mcmod.info file found in directory {}", modDir.getName());
+                FMLLog.fine("No mcmod.info file found in directory %s", modDir.getName());
             }
         }
 
@@ -101,7 +101,7 @@ public class DirectoryDiscoverer implements ITypeDiscoverer
         {
             if (file.isDirectory())
             {
-                FMLLog.log.trace("Recursing into package {}", path + file.getName());
+                FMLLog.finer("Recursing into package %s", path + file.getName());
                 exploreFileSystem(path + file.getName() + "/", file, harvestedMods, candidate, mc);
                 continue;
             }
@@ -119,7 +119,7 @@ public class DirectoryDiscoverer implements ITypeDiscoverer
                 }
                 catch (LoaderException e)
                 {
-                    FMLLog.log.error("There was a problem reading the file {} - probably this is a corrupt file", file.getPath(), e);
+                    FMLLog.log(Level.ERROR, e, "There was a problem reading the file %s - probably this is a corrupt file", file.getPath());
                     throw e;
                 }
                 catch (Exception e)

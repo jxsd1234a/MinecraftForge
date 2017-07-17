@@ -79,9 +79,8 @@ public class Event
     }
 
     /**
-     * Sets the cancel state of this event. Note, not all events are cancelable, and any attempt to
-     * invoke this method on an event that is not cancelable (as determined by {@link #isCancelable}
-     * will result in an {@link UnsupportedOperationException}.
+     * Sets the state of this event, not all events are cancelable, and any attempt to
+     * cancel a event that can't be will result in a IllegalArgumentException.
      *
      * The functionality of setting the canceled state is defined on a per-event bases.
      *
@@ -91,10 +90,7 @@ public class Event
     {
         if (!isCancelable())
         {
-            throw new UnsupportedOperationException(
-                "Attempted to call Event#setCanceled() on a non-cancelable event of type: "
-                + this.getClass().getCanonicalName()
-            );
+            throw new IllegalArgumentException("Attempted to cancel a non cancellable event");
         }
         isCanceled = cancel;
     }
@@ -130,7 +126,6 @@ public class Event
     {
         result = value;
     }
-
     /**
      * Called by the base constructor, this is used by ASM generated
      * event classes to setup various functionality such as the listener list.

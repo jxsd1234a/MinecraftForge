@@ -59,7 +59,7 @@ public class NetworkEventFiringHandler extends SimpleChannelInboundHandler<FMLPr
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
     {
-        FMLLog.log.error("NetworkEventFiringHandler exception", cause);
+        FMLLog.log(Level.ERROR, cause, "NetworkEventFiringHandler exception");
         super.exceptionCaught(ctx, cause);
     }
 }

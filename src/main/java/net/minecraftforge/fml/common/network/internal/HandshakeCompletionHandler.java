@@ -41,7 +41,7 @@ public class HandshakeCompletionHandler extends SimpleChannelInboundHandler<FMLM
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
     {
-        FMLLog.log.error("HandshakeCompletionHandler exception", cause);
+        FMLLog.log(Level.ERROR, cause, "HandshakeCompletionHandler exception");
         super.exceptionCaught(ctx, cause);
     }
 }

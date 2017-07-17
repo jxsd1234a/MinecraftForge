@@ -310,7 +310,7 @@ public class EnumHelper
             }
 
             for (String line : lines)
-                FMLLog.log.fatal(line);
+                FMLLog.severe(line);
 
             if (test)
             {

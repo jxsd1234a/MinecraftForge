@@ -134,7 +134,7 @@ public final class MultiLayerModel implements IModelCustomData
         {
             return new ModelResourceLocation(e.getAsString());
         }
-        FMLLog.log.fatal("Expect ModelResourceLocation, got: {}", json);
+        FMLLog.severe("Expect ModelResourceLocation, got: ", json);
         return new ModelResourceLocation("builtin/missing", "missing");
     }
 

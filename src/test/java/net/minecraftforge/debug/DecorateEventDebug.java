@@ -21,9 +21,7 @@ public class DecorateEventDebug
     public void init(FMLInitializationEvent event)
     {
         if (ENABLED)
-        {
             MinecraftForge.TERRAIN_GEN_BUS.register(this);
-        }
     }
 
     @SubscribeEvent

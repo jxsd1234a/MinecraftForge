@@ -39,7 +39,7 @@ public class ItemStackTransformer implements IClassTransformer {
 
     @Override
     public byte[] transform(String name, String transformedName, byte[] basicClass) {
-        if (!"net.minecraft.item.ItemStack".equals(transformedName))
+        if (!"net.minecraft.item.ItemStack".equals(name))
             return basicClass;
         ClassNode classNode = new ClassNode();
         ClassReader classReader = new ClassReader(basicClass);

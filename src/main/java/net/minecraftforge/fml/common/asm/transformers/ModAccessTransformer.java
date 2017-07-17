@@ -27,7 +27,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-import net.minecraftforge.fml.common.FMLLog;
+import net.minecraftforge.fml.relauncher.FMLRelaunchLog;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
@@ -54,7 +54,7 @@ public class ModAccessTransformer extends AccessTransformer {
             int added = getModifiers().size() - old_count;
             if (added > 0)
             {
-                FMLLog.log.debug("Loaded {} rules from AccessTransformer mod jar file {}\n", added, e.getKey());
+                FMLRelaunchLog.fine("Loaded %d rules from AccessTransformer mod jar file %s\n", added, e.getKey());
             }
         }
     }

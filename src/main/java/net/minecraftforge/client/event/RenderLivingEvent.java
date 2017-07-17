@@ -28,22 +28,14 @@ public abstract class RenderLivingEvent<T extends EntityLivingBase> extends Even
 {
     private final EntityLivingBase entity;
     private final RenderLivingBase<T> renderer;
-    private final float partialRenderTick;
     private final double x;
     private final double y;
     private final double z;
 
-    @Deprecated
     public RenderLivingEvent(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z)
-    {
-        this(entity, renderer, 1, x, y, z);
-    }
-
-    public RenderLivingEvent(EntityLivingBase entity, RenderLivingBase<T> renderer, float partialRenderTick, double x, double y, double z)
     {
         this.entity = entity;
         this.renderer = renderer;
-        this.partialRenderTick = partialRenderTick;
         this.x = x;
         this.y = y;
         this.z = z;
@@ -51,7 +43,6 @@ public abstract class RenderLivingEvent<T extends EntityLivingBase> extends Even
 
     public EntityLivingBase getEntity() { return entity; }
     public RenderLivingBase<T> getRenderer() { return renderer; }
-    public float getPartialRenderTick() { return partialRenderTick; }
     public double getX() { return x; }
     public double getY() { return y; }
     public double getZ() { return z; }
@@ -59,20 +50,16 @@ public abstract class RenderLivingEvent<T extends EntityLivingBase> extends Even
     @Cancelable
     public static class Pre<T extends EntityLivingBase> extends RenderLivingEvent<T>
     {
-        @Deprecated
         public Pre(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z){ super(entity, renderer, x, y, z); }
-        public Pre(EntityLivingBase entity, RenderLivingBase<T> renderer, float partialRenderTick, double x, double y, double z){ super(entity, renderer, partialRenderTick, x, y, z); }
     }
     public static class Post<T extends EntityLivingBase> extends RenderLivingEvent<T>
     {
-        @Deprecated
         public Post(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z){ super(entity, renderer, x, y, z); }
-        public Post(EntityLivingBase entity, RenderLivingBase<T> renderer, float partialRenderTick, double x, double y, double z){ super(entity, renderer, partialRenderTick, x, y, z); }
     }
 
     public abstract static class Specials<T extends EntityLivingBase> extends RenderLivingEvent<T>
     {
-        public Specials(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z){ super(entity, renderer, 0, x, y, z); }
+        public Specials(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z){ super(entity, renderer, x, y, z); }
 
         @Cancelable
         public static class Pre<T extends EntityLivingBase> extends Specials<T>
@@ -81,7 +68,7 @@ public abstract class RenderLivingEvent<T extends EntityLivingBase> extends Even
         }
         public static class Post<T extends EntityLivingBase> extends Specials<T>
         {
-            public Post(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z){ super(entity, renderer,  x, y, z); }
+            public Post(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z){ super(entity, renderer, x, y, z); }
         }
     }
 }

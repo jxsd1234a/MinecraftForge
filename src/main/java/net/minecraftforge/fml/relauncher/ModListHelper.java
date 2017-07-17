@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.launchwrapper.Launch;
-import net.minecraftforge.fml.common.FMLLog;
-
 import org.apache.logging.log4j.Level;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
@@ -48,7 +46,7 @@ public class ModListHelper {
     public static final Map<String,File> additionalMods = Maps.newLinkedHashMap();
     static void parseModList(File minecraftDirectory)
     {
-        FMLLog.log.debug("Attempting to load commandline specified mods, relative to {}", minecraftDirectory.getAbsolutePath());
+        FMLRelaunchLog.fine("Attempting to load commandline specified mods, relative to %s", minecraftDirectory.getAbsolutePath());
         mcDirectory = minecraftDirectory;
         @SuppressWarnings("unchecked")
         Map<String,String> args = (Map<String, String>) Launch.blackboard.get("launchArgs");
@@ -90,24 +88,24 @@ public class ModListHelper {
                 f = new File(mcDirectory, listFile).getCanonicalFile();
         } catch (IOException e2)
         {
-            FMLLog.log.info(FMLLog.log.getMessageFactory().newMessage("Unable to canonicalize path {} relative to {}", listFile, mcDirectory.getAbsolutePath()), e2);
+            FMLRelaunchLog.log(Level.INFO, e2, "Unable to canonicalize path %s relative to %s", listFile, mcDirectory.getAbsolutePath());
             return;
         }
         if (!f.exists())
         {
-            FMLLog.log.info("Failed to find modList file {}", f.getAbsolutePath());
+            FMLRelaunchLog.info("Failed to find modList file %s", f.getAbsolutePath());
             return;
         }
         if (visitedFiles.contains(f))
         {
-            FMLLog.log.fatal("There appears to be a loop in the modListFile hierarchy. You shouldn't do this!");
+            FMLRelaunchLog.severe("There appears to be a loop in the modListFile hierarchy. You shouldn't do this!");
             throw new RuntimeException("Loop detected, impossible to load modlistfile");
         }
         String json;
         try {
             json = Files.asCharSource(f, Charsets.UTF_8).read();
         } catch (IOException e1) {
-            FMLLog.log.info(FMLLog.log.getMessageFactory().newMessage("Failed to read modList json file {}.", listFile), e1);
+            FMLRelaunchLog.log(Level.INFO, e1, "Failed to read modList json file %s.", listFile);
             return;
         }
         Gson gsonParser = new Gson();
@@ -115,7 +113,7 @@ public class ModListHelper {
         try {
             modList = gsonParser.fromJson(json, JsonModList.class);
         } catch (JsonSyntaxException e) {
-            FMLLog.log.info(FMLLog.log.getMessageFactory().newMessage("Failed to parse modList json file {}.", listFile), e);
+            FMLRelaunchLog.log(Level.INFO, e, "Failed to parse modList json file %s.", listFile);
             return;
         }
         visitedFiles.add(f);
@@ -127,7 +125,7 @@ public class ModListHelper {
         File repoRoot = new File(modList.repositoryRoot);
         if (!repoRoot.exists())
         {
-            FMLLog.log.info("Failed to find the specified repository root {}", modList.repositoryRoot);
+            FMLRelaunchLog.info("Failed to find the specified repository root %s", modList.repositoryRoot);
             return;
         }
 
@@ -156,11 +154,11 @@ public class ModListHelper {
         File modFile = repoRoot != null ? new File(repoRoot,modFileName) : new File(mcDirectory, modFileName);
         if (!modFile.exists())
         {
-            FMLLog.log.info("Failed to find mod file {} ({})", descriptor, modFile.getAbsolutePath());
+            FMLRelaunchLog.info("Failed to find mod file %s (%s)", descriptor, modFile.getAbsolutePath());
         }
         else
         {
-            FMLLog.log.debug("Adding {} ({}) to the mod list", descriptor, modFile.getAbsolutePath());
+            FMLRelaunchLog.fine("Adding %s (%s) to the mod list", descriptor, modFile.getAbsolutePath());
             additionalMods.put(descriptor, modFile);
         }
     }

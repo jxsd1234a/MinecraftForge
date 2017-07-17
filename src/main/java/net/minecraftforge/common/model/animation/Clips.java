@@ -97,7 +97,7 @@ public final class Clips
             {
                 return new ModelClip(clip.get(), modelLocation, clipName);
             }
-            FMLLog.log.error("Unable to find clip {} in the model {}", clipName, modelLocation);
+            FMLLog.getLogger().error("Unable to find clip " + clipName + " in the model " + modelLocation);
         }
         // FIXME: missing clip?
         return new ModelClip(IdentityClip.INSTANCE, modelLocation, clipName);

@@ -77,11 +77,11 @@ public abstract class FMLHandshakeMessage {
             if (serverProtocolVersion > 1)
             {
                 overrideDimension = buffer.readInt();
-                FMLLog.log.debug("Server FML protocol version {}, 4 byte dimension received {}", serverProtocolVersion, overrideDimension);
+                FMLLog.fine("Server FML protocol version %d, 4 byte dimension received %d", serverProtocolVersion, overrideDimension);
             }
             else
             {
-                FMLLog.log.info("Server FML protocol version {}, no additional data received", serverProtocolVersion);
+                FMLLog.info("Server FML protocol version %d, no additional data received", serverProtocolVersion);
             }
         }
 

@@ -26,11 +26,11 @@ import java.util.Map;
 import java.util.Set;
 
 import net.minecraft.launchwrapper.IClassTransformer;
-import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.ModAPIManager;
 import net.minecraftforge.fml.common.discovery.ASMDataTable;
 import net.minecraftforge.fml.common.discovery.ASMDataTable.ASMData;
+import net.minecraftforge.fml.relauncher.FMLRelaunchLog;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -64,17 +64,17 @@ public class ModAPITransformer implements IClassTransformer {
         ClassReader classReader = new ClassReader(basicClass);
         classReader.accept(classNode, 0);
 
-        if (logDebugInfo) FMLLog.log.trace("Optional removal - found optionals for class {} - processing", name);
+        if (logDebugInfo) FMLRelaunchLog.finer("Optional removal - found optionals for class %s - processing", name);
         for (ASMData optional : optionals.get(lookupName))
         {
             String modId = (String) optional.getAnnotationInfo().get("modid");
 
             if (Loader.isModLoaded(modId) || ModAPIManager.INSTANCE.hasAPI(modId))
             {
-                if (logDebugInfo) FMLLog.log.trace("Optional removal skipped - mod present {}", modId);
+                if (logDebugInfo) FMLRelaunchLog.finer("Optional removal skipped - mod present %s", modId);
                 continue;
             }
-            if (logDebugInfo) FMLLog.log.trace("Optional on {} triggered - mod missing {}", name, modId);
+            if (logDebugInfo) FMLRelaunchLog.finer("Optional on %s triggered - mod missing %s", name, modId);
 
             if (optional.getAnnotationInfo().containsKey("iface"))
             {
@@ -88,7 +88,7 @@ public class ModAPITransformer implements IClassTransformer {
             }
 
         }
-        if (logDebugInfo) FMLLog.log.trace("Optional removal - class {} processed", name);
+        if (logDebugInfo) FMLRelaunchLog.finer("Optional removal - class %s processed", name);
 
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         classNode.accept(writer);
@@ -109,11 +109,11 @@ public class ModAPITransformer implements IClassTransformer {
             if (methodDescriptor.equals(method.name+method.desc))
             {
                 iterator.remove();
-                if (logDebugInfo) FMLLog.log.debug("Optional removal - method {} removed", methodDescriptor);
+                if (logDebugInfo) FMLRelaunchLog.finer("Optional removal - method %s removed", methodDescriptor);
                 return;
             }
         }
-        if (logDebugInfo) FMLLog.log.debug("Optional removal - method {} NOT removed - not found", methodDescriptor);
+        if (logDebugInfo) FMLRelaunchLog.finer("Optional removal - method %s NOT removed - not found", methodDescriptor);
     }
 
     private void stripInterface(ClassNode classNode, String interfaceName, boolean stripRefs)
@@ -126,28 +126,28 @@ public class ModAPITransformer implements IClassTransformer {
             final RemovingSignatureWriter signatureWriter = new RemovingSignatureWriter(ifaceName);
             sr.accept(signatureWriter);
             classNode.signature = signatureWriter.toString();
-            if (logDebugInfo) FMLLog.log.debug("Optional removal - interface {} removed from type signature", interfaceName);
+            if (logDebugInfo) FMLRelaunchLog.finer("Optional removal - interface %s removed from type signature");
         }
-        if (found && logDebugInfo) FMLLog.log.debug("Optional removal - interface {} removed", interfaceName);
-        if (!found && logDebugInfo) FMLLog.log.debug("Optional removal - interface {} NOT removed - not found", interfaceName);
+        if (found && logDebugInfo) FMLRelaunchLog.finer("Optional removal - interface %s removed", interfaceName);
+        if (!found && logDebugInfo) FMLRelaunchLog.finer("Optional removal - interface %s NOT removed - not found", interfaceName);
 
         if (found && stripRefs)
         {
-            if (logDebugInfo) FMLLog.log.debug("Optional removal - interface {} - stripping method signature references", interfaceName);
+            if (logDebugInfo) FMLRelaunchLog.finer("Optional removal - interface %s - stripping method signature references", interfaceName);
             for (Iterator<MethodNode> iterator = classNode.methods.iterator(); iterator.hasNext();)
             {
                 MethodNode node = iterator.next();
                 if (node.desc.contains(ifaceName))
                 {
-                    if (logDebugInfo) FMLLog.log.debug("Optional removal - interface {} - stripping method containing reference {}", interfaceName, node.name);
+                    if (logDebugInfo) FMLRelaunchLog.finer("Optional removal - interface %s - stripping method containing reference %s", interfaceName, node.name);
                     iterator.remove();
                 }
             }
-            if (logDebugInfo) FMLLog.log.debug("Optional removal - interface {} - all method signature references stripped", interfaceName);
+            if (logDebugInfo) FMLRelaunchLog.finer("Optional removal - interface %s - all method signature references stripped", interfaceName);
         }
         else if (found)
         {
-            if (logDebugInfo) FMLLog.log.debug("Optional removal - interface {} - NOT stripping method signature references", interfaceName);
+            if (logDebugInfo) FMLRelaunchLog.finer("Optional removal - interface %s - NOT stripping method signature references", interfaceName);
         }
     }
 

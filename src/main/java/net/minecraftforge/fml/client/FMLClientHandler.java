@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -137,6 +138,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import javax.activation.FileDataSource;
 import javax.annotation.Nullable;
 
 
@@ -222,7 +224,7 @@ public class FMLClientHandler implements IFMLSidedHandler
         this.resourcePackMap = Maps.newHashMap();
         if (minecraft.isDemo())
         {
-            FMLLog.log.fatal("DEMO MODE DETECTED, FML will not work. Finishing now.");
+            FMLLog.severe("DEMO MODE DETECTED, FML will not work. Finishing now.");
             haltGame("FML will not run in demo mode", new RuntimeException());
             return;
         }
@@ -254,7 +256,7 @@ public class FMLClientHandler implements IFMLSidedHandler
         }
         catch (CustomModLoadingErrorDisplayException custom)
         {
-            FMLLog.log.error("A custom exception was thrown by a mod, the game will now halt", custom);
+            FMLLog.log(Level.ERROR, custom, "A custom exception was thrown by a mod, the game will now halt");
             customError = custom;
         }
         catch (MultipleModsErrored multiple)
@@ -277,7 +279,7 @@ public class FMLClientHandler implements IFMLSidedHandler
         }
         catch (CustomModLoadingErrorDisplayException custom)
         {
-            FMLLog.log.error("A custom exception was thrown by a mod, the game will now halt", custom);
+            FMLLog.log(Level.ERROR, custom, "A custom exception was thrown by a mod, the game will now halt");
             customError = custom;
         }
         catch (LoaderException le)
@@ -307,6 +309,7 @@ public class FMLClientHandler implements IFMLSidedHandler
         try
         {
             Class<?> optifineConfig = Class.forName("Config", false, Loader.instance().getModClassLoader());
+            Field tset = optifineConfig.getField("VERSION");
             String optifineVersion = (String) optifineConfig.getField("VERSION").get(null);
             Map<String,Object> dummyOptifineMeta = ImmutableMap.<String,Object>builder().put("name", "Optifine").put("version", optifineVersion).build();
             InputStream optifineModInfoInputStream = getClass().getResourceAsStream("optifinemod.info");
@@ -314,7 +317,7 @@ public class FMLClientHandler implements IFMLSidedHandler
             {
                 ModMetadata optifineMetadata = MetadataCollection.from(optifineModInfoInputStream, "optifine").getMetadataForId("optifine", dummyOptifineMeta);
                 optifineContainer = new DummyModContainer(optifineMetadata);
-                FMLLog.log.info("Forge Mod Loader has detected optifine {}, enabling compatibility features", optifineContainer.getVersion());
+                FMLLog.info("Forge Mod Loader has detected optifine %s, enabling compatibility features", optifineContainer.getVersion());
             }
             finally
             {
@@ -358,7 +361,7 @@ public class FMLClientHandler implements IFMLSidedHandler
         }
         catch (CustomModLoadingErrorDisplayException custom)
         {
-            FMLLog.log.error("A custom exception was thrown by a mod, the game will now halt", custom);
+            FMLLog.log(Level.ERROR, custom, "A custom exception was thrown by a mod, the game will now halt");
             customError = custom;
             SplashProgress.finish();
             return;
@@ -393,7 +396,7 @@ public class FMLClientHandler implements IFMLSidedHandler
                 guiFactories.put(mc, guiFactory);
             } catch (Exception e)
             {
-                FMLLog.log.error("A critical error occurred instantiating the gui factory for mod {}", mc.getModId(), e);
+                FMLLog.log(Level.ERROR, e, "A critical error occurred instantiating the gui factory for mod %s", mc.getModId());
             }
         }
         loading = false;
@@ -683,12 +686,12 @@ public class FMLClientHandler implements IFMLSidedHandler
             }
             catch (NoSuchMethodException e)
             {
-                FMLLog.log.error("The container {} (type {}) returned an invalid class for it's resource pack.", container.getName(), container.getClass().getName());
+                FMLLog.log(Level.ERROR, "The container %s (type %s) returned an invalid class for it's resource pack.", container.getName(), container.getClass().getName());
                 return;
             }
             catch (Exception e)
             {
-                FMLLog.log.error("An unexpected exception occurred constructing the custom resource pack for {}", container.getName(), e);
+                FMLLog.log(Level.ERROR, e, "An unexpected exception occurred constructing the custom resource pack for %s", container.getName());
                 throw Throwables.propagate(e);
             }
         }
@@ -762,7 +765,7 @@ public class FMLClientHandler implements IFMLSidedHandler
             }
             catch (Exception e1)
             {
-                FMLLog.log.warn("There appears to be a problem loading the save {}, both level files are unreadable.", comparator.getFileName());
+                FMLLog.warning("There appears to be a problem loading the save %s, both level files are unreadable.", comparator.getFileName());
                 return;
             }
         }

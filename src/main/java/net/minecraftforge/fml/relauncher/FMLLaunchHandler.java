@@ -24,8 +24,8 @@ import java.io.File;
 import org.apache.logging.log4j.Level;
 
 import net.minecraft.launchwrapper.LaunchClassLoader;
-import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.fml.common.launcher.FMLTweaker;
+import scala.tools.nsc.transform.patmat.ScalaLogic.TreesAndTypesDomain.Var;
 
 import com.google.common.base.Throwables;
 
@@ -74,13 +74,16 @@ public class FMLLaunchHandler
     }
 
     private void setupClient()
-    {
+    {	
+    	side = FMLRelaunchLog.side;
+        FMLRelaunchLog.side = Side.CLIENT;
         side = Side.CLIENT;
         setupHome();
     }
 
     private void setupServer()
     {
+        FMLRelaunchLog.side = Side.SERVER;
         side = Side.SERVER;
         setupHome();
 
@@ -89,11 +92,12 @@ public class FMLLaunchHandler
     private void setupHome()
     {
         FMLInjectionData.build(minecraftHome, classLoader);
-        FMLLog.log.info("Forge Mod Loader version {}.{}.{}.{} for Minecraft {} loading", FMLInjectionData.major, FMLInjectionData.minor,
-                FMLInjectionData.rev, FMLInjectionData.build, FMLInjectionData.mccversion);
-        FMLLog.log.info("Java is {}, version {}, running on {}:{}:{}, installed at {}", System.getProperty("java.vm.name"), System.getProperty("java.version"), System.getProperty("os.name"), System.getProperty("os.arch"), System.getProperty("os.version"), System.getProperty("java.home"));
-        FMLLog.log.debug("Java classpath at launch is {}", System.getProperty("java.class.path"));
-        FMLLog.log.debug("Java library path at launch is {}", System.getProperty("java.library.path"));
+        FMLRelaunchLog.minecraftHome = minecraftHome;
+        FMLRelaunchLog.info("Forge Mod Loader version %s.%s.%s.%s for Minecraft %s loading", FMLInjectionData.major, FMLInjectionData.minor,
+                FMLInjectionData.rev, FMLInjectionData.build, FMLInjectionData.mccversion, FMLInjectionData.mcpversion);
+        FMLRelaunchLog.info("Java is %s, version %s, running on %s:%s:%s, installed at %s", System.getProperty("java.vm.name"), System.getProperty("java.version"), System.getProperty("os.name"), System.getProperty("os.arch"), System.getProperty("os.version"), System.getProperty("java.home"));
+        FMLRelaunchLog.fine("Java classpath at launch is %s", System.getProperty("java.class.path"));
+        FMLRelaunchLog.fine("Java library path at launch is %s", System.getProperty("java.library.path"));
 
         try
         {
@@ -101,7 +105,8 @@ public class FMLLaunchHandler
         }
         catch (Throwable t)
         {
-            FMLLog.log.error("An error occurred trying to configure the minecraft home at {} for Forge Mod Loader", minecraftHome.getAbsolutePath(), t);
+            t.printStackTrace();
+            FMLRelaunchLog.log(Level.ERROR, t, "An error occurred trying to configure the minecraft home at %s for Forge Mod Loader", minecraftHome.getAbsolutePath());
             throw Throwables.propagate(t);
         }
     }

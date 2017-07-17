@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 
 import javax.imageio.ImageIO;
 
@@ -62,7 +61,7 @@ public class FMLFileResourcePack extends FileResourcePack implements FMLContaine
         {
             if ("pack.mcmeta".equals(resourceName))
             {
-                LogManager.getLogger(container.getName()).debug("Mod {} is missing a pack.mcmeta file, substituting a dummy one", container.getName());
+                FMLLog.log(container.getName(), Level.DEBUG, "Mod %s is missing a pack.mcmeta file, substituting a dummy one", container.getName());
                 return new ByteArrayInputStream(("{\n" +
                         " \"pack\": {\n"+
                         "   \"description\": \"dummy FML pack for "+container.getName()+"\",\n"+

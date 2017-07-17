@@ -41,16 +41,10 @@ public class MultiLayerModelDebug
                 }
 
                 @Override
-                public boolean isOpaqueCube(IBlockState state)
-                {
-                    return false;
-                }
+                public boolean isOpaqueCube(IBlockState state) { return false; }
 
                 @Override
-                public boolean isFullCube(IBlockState state)
-                {
-                    return false;
-                }
+                public boolean isFullCube(IBlockState state) { return false; }
 
                 @Override
                 public boolean canRenderInLayer(IBlockState state, BlockRenderLayer layer)
@@ -62,9 +56,7 @@ public class MultiLayerModelDebug
         }
     }
 
-    public static class ServerProxy extends CommonProxy
-    {
-    }
+    public static class ServerProxy extends CommonProxy {}
 
     public static class ClientProxy extends CommonProxy
     {
@@ -77,8 +69,5 @@ public class MultiLayerModelDebug
     }
 
     @EventHandler
-    public void preInit(FMLPreInitializationEvent event)
-    {
-        proxy.preInit(event);
-    }
+    public void preInit(FMLPreInitializationEvent event) { proxy.preInit(event); }
 }

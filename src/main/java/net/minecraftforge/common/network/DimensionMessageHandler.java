@@ -39,7 +39,7 @@ public class DimensionMessageHandler extends SimpleChannelInboundHandler<ForgeMe
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
     {
-        FMLLog.log.error("DimensionMessageHandler exception", cause);
+        FMLLog.log(Level.ERROR, cause, "DimensionMessageHandler exception");
         super.exceptionCaught(ctx, cause);
     }
 

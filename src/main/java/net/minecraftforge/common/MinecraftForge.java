@@ -83,7 +83,7 @@ public class MinecraftForge
     */
    public static void initialize()
    {
-       FMLLog.log.info("MinecraftForge v{} Initialized", ForgeVersion.getVersion());
+       FMLLog.info("MinecraftForge v%s Initialized", ForgeVersion.getVersion());
 
        OreDictionary.getOreName(0);
 
@@ -113,11 +113,11 @@ public class MinecraftForge
        if (all.size() == 0)
         return;
 
-       ForgeModContainer.log.debug("Preloading CrashReport Classes");
+       FMLLog.log(modID, Level.DEBUG, "Preloading CrashReport Classes");
        Collections.sort(all); //Sort it because I like pretty output ;)
        for (String name : all)
        {
-           ForgeModContainer.log.debug("\t{}", name);
+           FMLLog.log(modID, Level.DEBUG, "\t" + name);
            try
            {
                Class.forName(name.replace('/', '.'), false, MinecraftForge.class.getClassLoader());

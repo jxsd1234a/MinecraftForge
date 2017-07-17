@@ -204,7 +204,7 @@ public class ModelLoaderRegistry
         }
         catch(Exception e)
         {
-            FMLLog.log.error(error, e);
+            FMLLog.getLogger().error(error, e);
             return getMissingModel(location, e);
         }
     }

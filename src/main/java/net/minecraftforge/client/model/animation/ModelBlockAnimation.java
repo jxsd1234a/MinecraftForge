@@ -326,7 +326,6 @@ public class ModelBlockAnimation
                 time -= Math.floor(time);
                 Vector3f translation = new Vector3f(0, 0, 0);
                 Vector3f scale = new Vector3f(1, 1, 1);
-                Vector3f origin = new Vector3f(0, 0, 0);
                 AxisAngle4f rotation = new AxisAngle4f(0, 0, 0, 0);
                 for(MBVariableClip var : variables)
                 {
@@ -391,24 +390,11 @@ public class ModelBlockAnimation
                         case ZS:
                             scale.z = value;
                             break;
-                        case XORIGIN:
-                            origin.x = value - 0.5F;
-                            break;
-                        case YORIGIN:
-                            origin.y = value - 0.5F;
-                            break;
-                        case ZORIGIN:
-                            origin.z = value - 0.5F;
-                            break;
                     }
                 }
                 Quat4f rot = new Quat4f();
                 rot.set(rotation);
-                TRSRTransformation base = new TRSRTransformation(translation, rot, scale, null);
-                Vector3f negOrigin = new Vector3f(origin);
-                negOrigin.negate();
-                base = new TRSRTransformation(origin, null, null, null).compose(base).compose(new TRSRTransformation(negOrigin, null, null, null));
-                return TRSRTransformation.blockCenterToCorner(base);
+                return TRSRTransformation.blockCenterToCorner(new TRSRTransformation(translation, rot, scale, null));
             }
         }
     }
@@ -512,13 +498,7 @@ public class ModelBlockAnimation
             @SerializedName("scale_y")
             YS,
             @SerializedName("scale_z")
-            ZS,
-            @SerializedName("origin_x")
-            XORIGIN,
-            @SerializedName("origin_y")
-            YORIGIN,
-            @SerializedName("origin_z")
-            ZORIGIN;
+            ZS;
         }
 
         public static enum Type
@@ -592,12 +572,12 @@ public class ModelBlockAnimation
         }
         catch(IOException e)
         {
-            FMLLog.log.error("Exception loading vanilla model animation {}, skipping", armatureLocation, e);
+            FMLLog.log(Level.ERROR, e, "Exception loading vanilla model animation %s, skipping", armatureLocation);
             return defaultModelBlockAnimation;
         }
         catch(JsonParseException e)
         {
-            FMLLog.log.error("Exception loading vanilla model animation {}, skipping", armatureLocation, e);
+            FMLLog.log(Level.ERROR, e, "Exception loading vanilla model animation %s, skipping", armatureLocation);
             return defaultModelBlockAnimation;
         }
     }

@@ -36,7 +36,7 @@ public class FluidIdRegistryMessageHandler extends SimpleChannelInboundHandler<F
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
     {
-        FMLLog.log.error("FluidIdRegistryMessageHandler exception", cause);
+        FMLLog.log(Level.ERROR, cause, "FluidIdRegistryMessageHandler exception");
         super.exceptionCaught(ctx, cause);
     }
 

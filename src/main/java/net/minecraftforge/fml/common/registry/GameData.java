@@ -89,7 +89,7 @@ public class GameData
         }
         catch (Exception e)
         {
-            FMLLog.log.fatal("Cannot access the 'block' field from ItemBlock, this is fatal!", e);
+            FMLLog.log(Level.FATAL, e, "Cannot access the 'block' field from ItemBlock, this is fatal!");
             throw Throwables.propagate(e);
         }
 
@@ -198,7 +198,7 @@ public class GameData
     {
         if (object == null)
         {
-            FMLLog.log.error("Attempt to register a null object");
+            FMLLog.getLogger().log(Level.ERROR, "Attempt to register a null object");
             throw new NullPointerException("Attempt to register a null object");
         }
         ((K)object).setRegistryName(location);
@@ -213,12 +213,12 @@ public class GameData
         K castedObj = (K)object;
         if (object == null)
         {
-            FMLLog.log.error("Attempt to register a null object");
+            FMLLog.getLogger().log(Level.ERROR, "Attempt to register a null object");
             throw new NullPointerException("Attempt to register a null object");
         }
         if (castedObj.getRegistryName() == null)
         {
-            FMLLog.log.error("Attempt to register object without having set a registry name {} (type {})", object, object.getClass().getName());
+            FMLLog.getLogger().log(Level.ERROR, "Attempt to register object without having set a registry name {} (type {})", object, object.getClass().getName());
             throw new IllegalArgumentException(String.format("No registry name set for object %s (%s)", object, object.getClass().getName()));
         }
         final IForgeRegistry<K> registry = PersistentRegistryManager.findRegistry(castedObj);

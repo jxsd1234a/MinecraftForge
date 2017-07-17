@@ -167,7 +167,7 @@ public class FMLServerHandler implements IFMLSidedHandler
     {
         if (query.getResult() == null)
         {
-            FMLLog.log.warn(query.getText());
+            FMLLog.warning("%s", query.getText());
             query.finish();
         }
         else
@@ -175,7 +175,7 @@ public class FMLServerHandler implements IFMLSidedHandler
             String text = query.getText() +
                     "\n\nRun the command /fml confirm or or /fml cancel to proceed." +
                     "\nAlternatively start the server with -Dfml.queryResult=confirm or -Dfml.queryResult=cancel to preselect the answer.";
-            FMLLog.log.warn(text);
+            FMLLog.warning("%s", text);
 
             if (!query.isSynchronous()) return; // no-op until mc does commands in another thread (if ever)
 
@@ -196,14 +196,14 @@ public class FMLServerHandler implements IFMLSidedHandler
 
                         if (cmd.equals("/fml confirm"))
                         {
-                            FMLLog.log.info("confirmed");
+                            FMLLog.info("confirmed");
                             query.setResult(true);
                             done = true;
                             it.remove();
                         }
                         else if (cmd.equals("/fml cancel"))
                         {
-                            FMLLog.log.info("cancelled");
+                            FMLLog.info("cancelled");
                             query.setResult(false);
                             done = true;
                             it.remove();
@@ -265,7 +265,7 @@ public class FMLServerHandler implements IFMLSidedHandler
         }
         catch (FileNotFoundException e)
         {
-            FMLLog.log.warn("Missing English translation for {}: {}", container.getModId(), e.getMessage(), e);
+            FMLLog.getLogger().warn("Missing English translation for " + container.getModId() + ": " + e.getMessage());
         }
         catch (IOException e)
         {
@@ -273,7 +273,7 @@ public class FMLServerHandler implements IFMLSidedHandler
         }
         catch(Exception e)
         {
-            FMLLog.log.error(e);
+            FMLLog.getLogger().error(e);
         }
         finally
         {

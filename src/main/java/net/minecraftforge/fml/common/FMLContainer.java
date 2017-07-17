@@ -48,7 +48,6 @@ import net.minecraftforge.fml.common.registry.VillagerRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -121,7 +120,7 @@ public final class FMLContainer extends DummyModContainer implements WorldAccess
 
         NBTTagCompound registries = new NBTTagCompound();
         fmlData.setTag("Registries", registries);
-        FMLLog.log.debug("Gathering id map for writing to world save {}", info.getWorldName());
+        FMLLog.fine("Gathering id map for writing to world save %s", info.getWorldName());
         PersistentRegistryManager.GameDataSnapshot dataSnapshot = PersistentRegistryManager.takeSnapshot();
 
         for (Map.Entry<ResourceLocation, PersistentRegistryManager.GameDataSnapshot.Entry> e : dataSnapshot.entries.entrySet())
@@ -191,12 +190,12 @@ public final class FMLContainer extends DummyModContainer implements WorldAccess
                 ModContainer container = Loader.instance().getIndexedModList().get(modId);
                 if (container == null)
                 {
-                    LogManager.getLogger("fml.ModTracker").error("This world was saved with mod {} which appears to be missing, things may not work well", modId);
+                    FMLLog.log("fml.ModTracker", Level.ERROR, "This world was saved with mod %s which appears to be missing, things may not work well", modId);
                     continue;
                 }
                 if (!modVersion.equals(container.getVersion()))
                 {
-                    LogManager.getLogger("fml.ModTracker").info("This world was saved with mod {} version {} and it is now at version {}, things may not work well", modId, modVersion, container.getVersion());
+                    FMLLog.log("fml.ModTracker", Level.INFO, "This world was saved with mod %s version %s and it is now at version %s, things may not work well", modId, modVersion, container.getVersion());
                 }
             }
         }

@@ -48,7 +48,7 @@ public enum ObjectHolderRegistry {
 
     public void findObjectHolders(ASMDataTable table)
     {
-        FMLLog.log.info("Processing ObjectHolder annotations");
+        FMLLog.info("Processing ObjectHolder annotations");
         Set<ASMData> allObjectHolders = table.getAll(GameRegistry.ObjectHolder.class.getName());
         Map<String, String> classModIds = Maps.newHashMap();
         Map<String, Class<?>> classCache = Maps.newHashMap();
@@ -77,12 +77,7 @@ public enum ObjectHolderRegistry {
         }
         scanTarget(classModIds, classCache, "net.minecraft.init.Blocks", null, "minecraft", true, true);
         scanTarget(classModIds, classCache, "net.minecraft.init.Items", null, "minecraft", true, true);
-        scanTarget(classModIds, classCache, "net.minecraft.init.MobEffects", null, "minecraft", true, true);
-        scanTarget(classModIds, classCache, "net.minecraft.init.Biomes", null, "minecraft", true, true);
-        scanTarget(classModIds, classCache, "net.minecraft.init.Enchantments", null, "minecraft", true, true);
-        scanTarget(classModIds, classCache, "net.minecraft.init.SoundEvents", null, "minecraft", true, true);
-        scanTarget(classModIds, classCache, "net.minecraft.init.PotionTypes", null, "minecraft", true, true);
-        FMLLog.log.info("Found {} ObjectHolder annotations", objectHolders.size());
+        FMLLog.info("Found %d ObjectHolder annotations", objectHolders.size());
     }
 
     private void scanTarget(Map<String, String> classModIds, Map<String, Class<?>> classCache, String className, @Nullable String annotationTarget, String value, boolean isClass, boolean extractFromValue)
@@ -116,7 +111,7 @@ public enum ObjectHolderRegistry {
                 String prefix = classModIds.get(className);
                 if (prefix == null)
                 {
-                    FMLLog.log.warn("Found an unqualified ObjectHolder annotation ({}) without a modid context at {}.{}, ignoring", value, className, annotationTarget);
+                    FMLLog.warning("Found an unqualified ObjectHolder annotation (%s) without a modid context at %s.%s, ignoring", value, className, annotationTarget);
                     throw new IllegalStateException("Unqualified reference to ObjectHolder");
                 }
                 value = prefix + ":" + value;
@@ -159,12 +154,12 @@ public enum ObjectHolderRegistry {
 
     public void applyObjectHolders()
     {
-        FMLLog.log.info("Applying holder lookups");
+        FMLLog.info("Applying holder lookups");
         for (ObjectHolderRef ohr : objectHolders)
         {
             ohr.apply();
         }
-        FMLLog.log.info("Holder lookups applied");
+        FMLLog.info("Holder lookups applied");
     }
 
 }

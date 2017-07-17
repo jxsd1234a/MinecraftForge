@@ -68,7 +68,7 @@ public class StartupQuery {
             }
             catch (InterruptedException e)
             {
-                FMLLog.log.warn("query interrupted");
+                FMLLog.warning("query interrupted");
                 abort();
             }
 
@@ -120,7 +120,7 @@ public class StartupQuery {
 
         if (result != null && prop != null)
         {
-            FMLLog.log.info("Using fml.queryResult {} to answer the following query:\n{}", prop, text);
+            FMLLog.info("Using fml.queryResult %s to answer the following query:\n%s", prop, text);
 
             if (prop.equalsIgnoreCase("confirm"))
             {
@@ -133,7 +133,7 @@ public class StartupQuery {
                 return;
             }
 
-            FMLLog.log.warn("Invalid value for fml.queryResult: {}, expected confirm or cancel", prop);
+            FMLLog.warning("Invalid value for fml.queryResult: %s, expected confirm or cancel", prop);
         }
 
         synchronous = false;
@@ -156,7 +156,7 @@ public class StartupQuery {
         }
         catch (InterruptedException e)
         {
-            FMLLog.log.warn("query interrupted");
+            FMLLog.warning("query interrupted");
             abort();
         }
     }

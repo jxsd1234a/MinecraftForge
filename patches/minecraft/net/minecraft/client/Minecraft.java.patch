@@ -8,9 +8,19 @@
          this.field_71459_aj = p_i45547_1_.field_178741_d.field_178756_a;
          this.field_71443_c = p_i45547_1_.field_178743_b.field_178764_a > 0 ? p_i45547_1_.field_178743_b.field_178764_a : 1;
          this.field_71440_d = p_i45547_1_.field_178743_b.field_178762_b > 0 ? p_i45547_1_.field_178743_b.field_178762_b : 1;
-@@ -437,10 +436,10 @@
+@@ -426,6 +425,7 @@
+         }
+ 
+         field_147123_G.info("LWJGL Version: {}", new Object[] {Sys.getVersion()});
++        this.field_135017_as = new LanguageManager(this.field_110452_an, this.field_71474_y.field_74363_ab);
+         this.func_175594_ao();
+         this.func_175605_an();
+         this.func_175609_am();
+@@ -435,12 +435,11 @@
+         this.func_175608_ak();
+         this.field_110448_aq = new ResourcePackRepository(this.field_130070_K, new File(this.field_71412_D, "server-resource-packs"), this.field_110450_ap, this.field_110452_an, this.field_71474_y);
          this.field_110451_am = new SimpleReloadableResourceManager(this.field_110452_an);
-         this.field_135017_as = new LanguageManager(this.field_110452_an, this.field_71474_y.field_74363_ab);
+-        this.field_135017_as = new LanguageManager(this.field_110452_an, this.field_71474_y.field_74363_ab);
          this.field_110451_am.func_110542_a(this.field_135017_as);
 -        this.func_110436_a();
 +        net.minecraftforge.fml.client.FMLClientHandler.instance().beginMinecraftLoading(this, this.field_110449_ao, this.field_110451_am);
@@ -96,6 +106,15 @@
          if (this.field_71474_y.field_74353_u && !this.field_71431_Q)
          {
              this.func_71352_k();
+@@ -556,7 +566,7 @@
+     private void func_175609_am() throws LWJGLException
+     {
+         Display.setResizable(true);
+-        Display.setTitle("Minecraft 1.10.2");
++        Display.setTitle("我的世界 1.10.2");
+ 
+         try
+         {
 @@ -697,21 +707,23 @@
          File file2 = new File(file1, "crash-" + (new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss")).format(new Date()) + "-client.txt");
          Bootstrap.func_179870_a(p_71377_1_.func_71502_e());

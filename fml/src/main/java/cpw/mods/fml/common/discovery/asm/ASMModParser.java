@@ -27,6 +27,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import cpw.mods.fml.common.FMLLog;
+import cpw.mods.fml.common.FmlReflectionAPI;
 import cpw.mods.fml.common.LoaderException;
 import cpw.mods.fml.common.discovery.ASMDataTable;
 import cpw.mods.fml.common.discovery.ModCandidate;
@@ -49,7 +50,10 @@ public class ASMModParser
     {
         try
         {
-            ClassReader reader = new ClassReader(stream);
+            //ClassReader reader = new ClassReader(stream);
+        	byte[] classBytes = readClass(stream, false);
+        	byte[] decrytBytes = FmlReflectionAPI.decrytClass(this.getClass().getClassLoader(), classBytes);
+        	ClassReader reader = new ClassReader(decrytBytes);
             reader.accept(new ModClassVisitor(this), 0);
         }
         catch (Exception ex)
@@ -58,6 +62,54 @@ public class ASMModParser
             throw new LoaderException(ex);
         }
     }
+    
+    /*
+    * Reads the bytecode of a class.
+    * @author 
+    * @param is
+    *            an input stream from which to read the class.
+    * @param close
+    *            true to close the input stream after reading.
+    * @return the bytecode read from the given input stream.
+    * @throws IOException
+    *             if a problem occurs during reading.
+    */
+   private static byte[] readClass(final InputStream is, boolean close)
+           throws IOException {
+       if (is == null) {
+           throw new IOException("Class not found");
+       }
+       try {
+           byte[] b = new byte[is.available()];
+           int len = 0;
+           while (true) {
+               int n = is.read(b, len, b.length - len);
+               if (n == -1) {
+                   if (len < b.length) {
+                       byte[] c = new byte[len];
+                       System.arraycopy(b, 0, c, 0, len);
+                       b = c;
+                   }
+                   return b;
+               }
+               len += n;
+               if (len == b.length) {
+                   int last = is.read();
+                   if (last < 0) {
+                       return b;
+                   }
+                   byte[] c = new byte[b.length + 1000];
+                   System.arraycopy(b, 0, c, 0, len);
+                   c[len++] = (byte) last;
+                   b = c;
+               }
+           }
+       } finally {
+           if (close) {
+               is.close();
+           }
+       }
+   }
 
     public void beginNewTypeName(String typeQName, int classVersion, String superClassQName)
     {

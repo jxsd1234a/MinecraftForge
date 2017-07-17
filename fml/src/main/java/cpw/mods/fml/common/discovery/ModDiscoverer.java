@@ -13,6 +13,7 @@
 package cpw.mods.fml.common.discovery;
 
 import java.io.File;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,12 +24,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.ObjectArrays;
 
 import cpw.mods.fml.common.FMLLog;
+import cpw.mods.fml.common.FmlReflectionAPI;
 import cpw.mods.fml.common.LoaderException;
 import cpw.mods.fml.common.ModClassLoader;
 import cpw.mods.fml.common.ModContainer;
 import cpw.mods.fml.relauncher.CoreModManager;
 import cpw.mods.fml.relauncher.FileListHelper;
-import cpw.mods.fml.relauncher.ModListHelper;
 
 public class ModDiscoverer
 {
@@ -66,6 +67,9 @@ public class ModDiscoverer
                     {
                         FMLLog.finer("Skipping known library file %s", minecraftSources[i].getAbsolutePath());
                     }
+                    else if (false == FmlReflectionAPI.checkPermission(getClass().getClassLoader(),  minecraftSources[i])) {
+                    	FMLLog.finer("File not permitted.Skipping file %s", minecraftSources[i].getAbsolutePath());
+					}
                     else
                     {
                         FMLLog.fine("Found a minecraft related file at %s, examining for mod candidates", minecraftSources[i].getAbsolutePath());
@@ -74,8 +78,11 @@ public class ModDiscoverer
                 }
                 else if (minecraftSources[i].isDirectory())
                 {
+                	
+                	/*
                     FMLLog.fine("Found a minecraft related directory at %s, examining for mod candidates", minecraftSources[i].getAbsolutePath());
                     candidates.add(new ModCandidate(minecraftSources[i], minecraftSources[i], ContainerType.DIR, i==0, true));
+                    */
                 }
             }
         }
@@ -86,6 +93,58 @@ public class ModDiscoverer
     {
         findModDirMods(modsDir, new File[0]);
     }
+    
+    
+    public void checkModDirMods(File modsDir, File[] supplementalModFileCandidates)
+    {
+    	ClassLoader loader = getClass().getClassLoader();
+        File[] modDirList = FileListHelper.sortFileList(modsDir, null);
+        List<File> listModList = new LinkedList<File>();
+        for (File modFile : modDirList)
+        {
+            if (modFile.isDirectory())
+            {
+                FMLLog.fine("Skipping a directory: %s.", modFile.getName());
+                continue;
+            }
+        	if (false == FmlReflectionAPI.checkPermission(loader, modFile))
+        	{
+        		FMLLog.fine("Dont have permission.mod:%s", modFile.getName());
+        		continue;
+        	}
+        	listModList.add(modFile);
+        }
+        File[] modList = (File[]) listModList.toArray(new File[0]);
+        modList = FileListHelper.sortFileList(ObjectArrays.concat(modList, supplementalModFileCandidates, File.class));  
+        for (File modFile : modList)
+        {
+            // skip loaded coremods
+            if (CoreModManager.getLoadedCoremods().contains(modFile.getName()))
+            {
+                FMLLog.finer("Skipping already parsed coremod or tweaker %s", modFile.getName());
+            }
+            else if (modFile.isDirectory())
+            {
+                FMLLog.fine("Found a candidate mod directory %s", modFile.getName());
+                candidates.add(new ModCandidate(modFile, modFile, ContainerType.DIR));
+            }
+            else
+            {
+                Matcher matcher = zipJar.matcher(modFile.getName());
+
+                if (matcher.matches())
+                {
+                    FMLLog.fine("Found a candidate zip or jar file %s", matcher.group(0));
+                    candidates.add(new ModCandidate(modFile, modFile, ContainerType.JAR));
+                }
+                else
+                {
+                    FMLLog.fine("Ignoring unknown file %s in mods directory", modFile.getName());
+                }
+            }
+        }
+    }
+
 
     public void findModDirMods(File modsDir, File[] supplementalModFileCandidates)
     {

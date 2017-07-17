@@ -19,14 +19,8 @@
 
 package net.minecraftforge.fml.common;
 
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.event.furnace.FurnaceFuelBurnTimeEvent;
 
-/**
- * @deprecated set your item's {@link Item#getItemBurnTime(ItemStack)} or subscribe to {@link FurnaceFuelBurnTimeEvent} instead.
- */
-@Deprecated
 public interface IFuelHandler
 {
     int getBurnTime(ItemStack fuel);

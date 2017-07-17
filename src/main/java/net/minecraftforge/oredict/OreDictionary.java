@@ -380,7 +380,7 @@ public class OreDictionary
                                 matches = true;
                                 if (oreName != null && !oreName.equals(ent.getValue()))
                                 {
-                                    FMLLog.log.info("Invalid recipe found with multiple oredict ingredients in the same ingredient..."); //TODO: Write a dumper?
+                                    FMLLog.info("Invalid recipe found with multiple oredict ingredients in the same ingredient..."); //TODO: Write a dumper?
                                     skip = true;
                                     break;
                                 }
@@ -596,7 +596,7 @@ public class OreDictionary
         {
             return false;
         }
-        return (target.getItem() == input.getItem() && ((target.getMetadata() == WILDCARD_VALUE && !strict) || target.getMetadata() == input.getMetadata()));
+        return (target.getItem() == input.getItem() && ((target.getItemDamage() == WILDCARD_VALUE && !strict) || target.getItemDamage() == input.getItemDamage()));
     }
 
     //Convenience functions that make for cleaner code mod side. They all drill down to registerOre(String, int, ItemStack)
@@ -709,7 +709,12 @@ public class OreDictionary
                 {
                     hash |= ((ore.getItemDamage() + 1) << 16); // +1 so meta 0 is significant
                 }
-                List<Integer> ids = stackToId.computeIfAbsent(hash, k -> Lists.newArrayList());
+                List<Integer> ids = stackToId.get(hash);
+                if (ids == null)
+                {
+                    ids = Lists.newArrayList();
+                    stackToId.put(hash, ids);
+                }
                 ids.add(id);
                 //System.out.println(id + " " + getOreName(id) + " " + Integer.toHexString(hash) + " " + ore);
             }

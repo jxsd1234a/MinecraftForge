@@ -22,6 +22,7 @@ package net.minecraftforge.fml.common;
 import java.util.List;
 import java.util.Set;
 
+import net.minecraftforge.fml.common.functions.ModNameFunction;
 import net.minecraftforge.fml.common.versioning.ArtifactVersion;
 
 import com.google.common.base.Joiner;
@@ -83,7 +84,7 @@ public class ModMetadata
 
     public String getChildModList()
     {
-        return Joiner.on(", ").join(childMods.stream().map(ModContainer::getName).iterator());
+        return Joiner.on(", ").join(Lists.transform(childMods, new ModNameFunction()));
     }
 
     public String printableSortingRules()

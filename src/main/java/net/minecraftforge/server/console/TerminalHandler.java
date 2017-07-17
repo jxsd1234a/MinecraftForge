@@ -24,7 +24,7 @@ import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.function.Function;
+import com.google.common.base.Function;
 
 import jline.console.ConsoleReader;
 import net.minecraft.server.dedicated.DedicatedServer;
@@ -74,7 +74,15 @@ public final class TerminalHandler
         }
         else
         {
-            TerminalConsoleAppender.setFormatter(TextFormatting::getTextWithoutFormattingCodes);
+            TerminalConsoleAppender.setFormatter(new Function<String, String>() {
+
+                @Override
+                public String apply(String text)
+                {
+                    return TextFormatting.getTextWithoutFormattingCodes(text);
+                }
+
+            });
             return false;
         }
     }

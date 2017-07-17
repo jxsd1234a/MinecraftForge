@@ -26,6 +26,12 @@ import java.lang.reflect.Modifier;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.FMLLog;
 
+import org.apache.logging.log4j.Level;
+
+import com.google.common.base.Throwables;
+
+
+
 /**
  * Internal class used in tracking {@link GameRegistry.ItemStackHolder} references
  *
@@ -66,10 +72,9 @@ class ItemStackHolderRef {
                 modifiersField.setAccessible(true);
             }
             modifiersField.setInt(f, f.getModifiers() & ~Modifier.FINAL);
-        }
-        catch (ReflectiveOperationException e)
+        } catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw Throwables.propagate(e);
         }
     }
 

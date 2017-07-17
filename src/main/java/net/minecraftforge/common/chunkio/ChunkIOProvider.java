@@ -26,7 +26,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.ChunkDataEvent;
-import net.minecraftforge.fml.common.FMLLog;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -70,7 +69,7 @@ class ChunkIOProvider implements Runnable
             }
             catch (IOException e)
             {
-                FMLLog.log.error("Failed to load chunk async.", e);
+                e.printStackTrace();
             }
 
             if (data != null)

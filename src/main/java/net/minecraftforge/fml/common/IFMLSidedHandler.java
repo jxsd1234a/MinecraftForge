@@ -84,8 +84,4 @@ public interface IFMLSidedHandler
     CompoundDataFixer getDataFixer();
 
     boolean isDisplayVSyncForced();
-
-    default void resetClientRecipeBook(){}
-
-    default void reloadSearchTrees(){}
 }

@@ -46,6 +46,7 @@ import com.google.common.io.Files;
 import net.minecraft.launchwrapper.ITweaker;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraft.launchwrapper.LaunchClassLoader;
+import net.minecraftforge.common.ReflectionAPI;
 import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.fml.common.asm.ASMTransformerWrapper;
 import net.minecraftforge.fml.common.asm.transformers.ModAccessTransformer;
@@ -57,7 +58,10 @@ import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin.Name;
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin.SortingIndex;
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin.TransformerExclusions;
 
+import org.apache.commons.io.IOUtils;
+
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -221,7 +225,8 @@ public class CoreModManager {
         }
         catch (Exception e)
         {
-            throw new RuntimeException("The patch transformer failed to load! This is critical, loading cannot continue!", e);
+            FMLLog.log.error("The patch transformer failed to load! This is critical, loading cannot continue!", e);
+            throw Throwables.propagate(e);
         }
 
         loadPlugins = new ArrayList<FMLPluginWrapper>();
@@ -239,6 +244,7 @@ public class CoreModManager {
         // Now that we have the root plugins loaded - lets see what else might
         // be around
         String commandLineCoremods = System.getProperty("fml.coreMods.load", "");
+        /*
         for (String coreModClassName : commandLineCoremods.split(","))
         {
             if (coreModClassName.isEmpty())
@@ -248,6 +254,7 @@ public class CoreModManager {
             FMLLog.log.info("Found a command line coremod : {}", coreModClassName);
             loadCoreMod(classLoader, coreModClassName, null);
         }
+        */
         discoverCoreMods(mcDir, classLoader);
 
     }
@@ -308,21 +315,23 @@ public class CoreModManager {
                 Object crashreport = crashreportclass.getMethod("a", Throwable.class, String.class).invoke(null, re, "FML has discovered extracted jar files in the mods directory.\nThis breaks mod loading functionality completely.\nRemove the directories and replace with the jar files originally provided.");
                 File crashreportfile = new File(new File(coreMods.getParentFile(),"crash-reports"),String.format("fml-crash-%1$tY-%1$tm-%1$td_%1$tH.%1$tM.%1$tS.txt",Calendar.getInstance()));
                 crashreportclass.getMethod("a",File.class).invoke(crashreport, crashreportfile);
-                FMLLog.log.fatal("#@!@# FML has crashed the game deliberately. Crash report saved to: #@!@# {}", crashreportfile.getAbsolutePath());
+                System.out.println("#@!@# FML has crashed the game deliberately. Crash report saved to: #@!@# " + crashreportfile.getAbsolutePath());
             } catch (Exception e)
             {
-                FMLLog.log.fatal("#@!@# FML has crashed while generating a crash report, please report this. #@!@#", e);
+                e.printStackTrace();
                 // NOOP - hopefully
             }
             throw re;
         }
         File[] coreModList = coreMods.listFiles(ff);
         File versionedModDir = new File(coreMods, FMLInjectionData.mccversion);
+        /*
         if (versionedModDir.isDirectory())
         {
             File[] versionedCoreMods = versionedModDir.listFiles(ff);
             coreModList = ObjectArrays.concat(coreModList, versionedCoreMods, File.class);
         }
+        */
 
         coreModList = ObjectArrays.concat(coreModList, ModListHelper.additionalMods.values().toArray(new File[0]), File.class);
 
@@ -336,6 +345,18 @@ public class CoreModManager {
             String fmlCorePlugin;
             try
             {
+            	if (true == coreMod.isDirectory())
+            	{
+            		FMLLog.log.info("Check Coremod.Skip directory %s.", coreMod.getName());
+                    continue;
+            	}
+               	if (false == ReflectionAPI.checkPermission(classLoader, coreMod))
+            	{
+               		FMLLog.log.info("Adding %s to the list of things to skip. you dont have permission to use it.", coreMod.getName());
+                    ignoredModFiles.add(coreMod.getName());
+                    continue;
+            	}
+            	//add end
                 jar = new JarFile(coreMod);
                 if (jar.getManifest() == null)
                 {
@@ -462,11 +483,18 @@ public class CoreModManager {
             try
             {
                 Files.createParentDirs(target);
-                try (
-                    FileOutputStream targetOutputStream = new FileOutputStream(target);
-                    InputStream jarInputStream = jar.getInputStream(jarEntry);
-                ){
+                FileOutputStream targetOutputStream = null;
+                InputStream jarInputStream = null;
+                try
+                {
+                    targetOutputStream = new FileOutputStream(target);
+                    jarInputStream = jar.getInputStream(jarEntry);
                     ByteStreams.copy(jarInputStream, targetOutputStream);
+                }
+                finally
+                {
+                    IOUtils.closeQuietly(targetOutputStream);
+                    IOUtils.closeQuietly(jarInputStream);
                 }
                 FMLLog.log.debug("Extracted ContainedDep {} from {} to {}", dep, jar.getName(), target.getCanonicalPath());
                 result.put(dep,target);

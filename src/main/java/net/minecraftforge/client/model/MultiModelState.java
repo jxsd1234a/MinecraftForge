@@ -26,7 +26,7 @@ import net.minecraftforge.common.model.TRSRTransformation;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.google.common.base.Objects;
-import java.util.Optional;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -64,7 +64,7 @@ public final class MultiModelState implements IModelState
                 MultiModelPart key = (MultiModelPart)part.get();
                 if(states.containsKey(key))
                 {
-                    return Optional.of(states.get(key).apply(Optional.empty()).orElse(TRSRTransformation.identity()));
+                    return Optional.of(states.get(key).apply(Optional.<IModelPart>absent()).or(TRSRTransformation.identity()));
                 }
             }
             else if(part.get() instanceof PartPart)
@@ -77,7 +77,7 @@ public final class MultiModelState implements IModelState
                 }
             }
         }
-        return Optional.empty();
+        return Optional.absent();
     }
 
     private static class PartState implements IModelState
@@ -102,10 +102,7 @@ public final class MultiModelState implements IModelState
             {
                 return Optional.of(normal.get().compose(multi.get()));
             }
-            if (normal.isPresent()) {
-                return normal;
-            }
-            return multi;
+            return normal.or(multi);
         }
     }
 

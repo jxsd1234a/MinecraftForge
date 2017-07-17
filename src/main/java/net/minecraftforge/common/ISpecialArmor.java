@@ -17,6 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * This software is provided under the terms of the Minecraft Forge Public
+ * License v1.0.
+ */
+
 package net.minecraftforge.common;
 
 import java.util.ArrayList;
@@ -118,11 +123,6 @@ public interface ISpecialArmor
          */
         public static float applyArmor(EntityLivingBase entity, NonNullList<ItemStack> inventory, DamageSource source, double damage)
         {
-            if (source.isUnblockable())
-            {
-                return (float)damage;
-            }
-
             if (DEBUG)
             {
                 System.out.println("Start: " + damage);
@@ -149,7 +149,7 @@ public interface ISpecialArmor
                     totalArmor += prop.Armor;
                     totalToughness += prop.Toughness;
                 }
-                else if (stack.getItem() instanceof ItemArmor)
+                else if (stack.getItem() instanceof ItemArmor && !source.isUnblockable())
                 {
                     ItemArmor armor = (ItemArmor)stack.getItem();
                     prop = new ArmorProperties(0, 0, Integer.MAX_VALUE);

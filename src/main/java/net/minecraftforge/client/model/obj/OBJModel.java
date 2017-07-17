@@ -22,7 +22,6 @@ package net.minecraftforge.client.model.obj;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,6 +43,7 @@ import javax.vecmath.Vector4f;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.IBakedModel;
+import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms.TransformType;
 import net.minecraft.client.renderer.block.model.ItemOverrideList;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -65,9 +65,10 @@ import net.minecraftforge.fml.common.FMLLog;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.function.Function;
+import com.google.common.base.Charsets;
+import com.google.common.base.Function;
 import com.google.common.base.Objects;
-import java.util.Optional;
+import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -77,7 +78,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-public class OBJModel implements IModel
+public class OBJModel implements IRetexturableModel, IModelCustomData
 {
     //private Gson GSON = new GsonBuilder().create();
     private MaterialLibrary matLib;
@@ -94,6 +95,12 @@ public class OBJModel implements IModel
         this.matLib = matLib;
         this.modelLocation = modelLocation;
         this.customData = customData;
+    }
+
+    @Override
+    public Collection<ResourceLocation> getDependencies()
+    {
+        return Collections.emptyList();
     }
 
     @Override
@@ -205,7 +212,7 @@ public class OBJModel implements IModel
         {
             this.manager = manager;
             this.objFrom = from.getResourceLocation();
-            this.objStream = new InputStreamReader(from.getInputStream(), StandardCharsets.UTF_8);
+            this.objStream = new InputStreamReader(from.getInputStream(), Charsets.UTF_8);
             this.objReader = new BufferedReader(objStream);
         }
 
@@ -498,7 +505,7 @@ public class OBJModel implements IModel
             String domain = from.getResourceDomain();
             if (!path.contains("/"))
                 path = from.getResourcePath().substring(0, from.getResourcePath().lastIndexOf("/") + 1) + path;
-            mtlStream = new InputStreamReader(manager.getResource(new ResourceLocation(domain, path)).getInputStream(), StandardCharsets.UTF_8);
+            mtlStream = new InputStreamReader(manager.getResource(new ResourceLocation(domain, path)).getInputStream(), Charsets.UTF_8);
             mtlReader = new BufferedReader(mtlStream);
 
             String currentLine = "";
@@ -1074,7 +1081,7 @@ public class OBJModel implements IModel
             for (Face f : this.faces)
             {
 //                if (minUVBounds != null && maxUVBounds != null) f.normalizeUVs(minUVBounds, maxUVBounds);
-                faceSet.add(f.bake(transform.orElse(TRSRTransformation.identity())));
+                faceSet.add(f.bake(transform.or(TRSRTransformation.identity())));
             }
             return faceSet;
         }
@@ -1135,7 +1142,7 @@ public class OBJModel implements IModel
         public Optional<TRSRTransformation> apply(Optional<? extends IModelPart> part)
         {
             if (parent != null) return parent.apply(part);
-            return Optional.empty();
+            return Optional.absent();
         }
 
         public Map<String, Boolean> getVisibilityMap()
@@ -1275,7 +1282,7 @@ public class OBJModel implements IModel
         }
     }
 
-    public class OBJBakedModel implements IBakedModel
+    public class OBJBakedModel implements IPerspectiveAwareModel
     {
         private final OBJModel model;
         private IModelState state;
@@ -1328,7 +1335,7 @@ public class OBJModel implements IModel
             List<BakedQuad> quads = Lists.newArrayList();
             Collections.synchronizedSet(new LinkedHashSet<BakedQuad>());
             Set<Face> faces = Collections.synchronizedSet(new LinkedHashSet<Face>());
-            Optional<TRSRTransformation> transform = Optional.empty();
+            Optional<TRSRTransformation> transform = Optional.absent();
             for (Group g : this.model.getMatLib().getGroups().values())
             {
 //                g.minUVBounds = this.model.getMatLib().minUVBounds;
@@ -1344,7 +1351,7 @@ public class OBJModel implements IModel
                     OBJState state = (OBJState) modelState;
                     if (state.parent != null)
                     {
-                        transform = state.parent.apply(Optional.empty());
+                        transform = state.parent.apply(Optional.<IModelPart>absent());
                     }
                     //TODO: can this be replaced by updateStateVisibilityMap(OBJState)?
                     if (state.getGroupNamesFromMap().contains(Group.ALL))
@@ -1381,7 +1388,7 @@ public class OBJModel implements IModel
                 }
                 else
                 {
-                    transform = modelState.apply(Optional.empty());
+                    transform = modelState.apply(Optional.<IModelPart>absent());
                     faces.addAll(g.applyTransform(transform));
                 }
             }
@@ -1480,6 +1487,12 @@ public class OBJModel implements IModel
             return this.sprite;
         }
 
+        @Override
+        public ItemCameraTransforms getItemCameraTransforms()
+        {
+            return ItemCameraTransforms.DEFAULT;
+        }
+
         // FIXME: merge with getQuads
         /* @Override
         public OBJBakedModel handleBlockState(IBlockState state)
@@ -1567,7 +1580,7 @@ public class OBJModel implements IModel
         @Override
         public Pair<? extends IBakedModel, Matrix4f> handlePerspective(TransformType cameraTransformType)
         {
-            return PerspectiveMapWrapper.handlePerspective(this, state, cameraTransformType);
+            return IPerspectiveAwareModel.MapWrapper.handlePerspective(this, state, cameraTransformType);
         }
 
         @Override
@@ -1593,5 +1606,11 @@ public class OBJModel implements IModel
             super(String.format("Model '%s' has UVs ('vt') out of bounds 0-1! The missing model will be used instead. Support for UV processing will be added to the OBJ loader in the future.", modelLocation));
             this.modelLocation = modelLocation;
         }
+    }
+
+    @Override
+    public IModelState getDefaultState()
+    {
+        return TRSRTransformation.identity();
     }
 }

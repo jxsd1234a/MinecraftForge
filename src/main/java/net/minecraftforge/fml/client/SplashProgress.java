@@ -28,6 +28,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.nio.IntBuffer;
 import java.util.Iterator;
@@ -65,6 +67,7 @@ import net.minecraftforge.fml.common.asm.FMLSanityChecker;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
@@ -148,14 +151,20 @@ public class SplashProgress
         if (!parent.exists())
             parent.mkdirs();
 
+        FileReader r = null;
         config = new Properties();
-        try (FileReader r = new FileReader(configFile))
+        try
         {
+            r = new FileReader(configFile);
             config.load(r);
         }
         catch(IOException e)
         {
             FMLLog.log.info("Could not load splash.properties, will create a default one");
+        }
+        finally
+        {
+            IOUtils.closeQuietly(r);
         }
 
         //Some system do not support this and have weird effects so we need to detect and disable by default.
@@ -185,13 +194,19 @@ public class SplashProgress
 
         File miscPackFile = new File(Minecraft.getMinecraft().mcDataDir, getString("resourcePackPath", "resources"));
 
-        try (FileWriter w = new FileWriter(configFile))
+        FileWriter w = null;
+        try
         {
+            w = new FileWriter(configFile);
             config.store(w, "Splash screen properties");
         }
         catch(IOException e)
         {
             FMLLog.log.error("Could not save the splash.properties file", e);
+        }
+        finally
+        {
+            IOUtils.closeQuietly(w);
         }
 
         miscPack = createResourcePack(miscPackFile);
@@ -228,7 +243,7 @@ public class SplashProgress
         }
         catch (LWJGLException e)
         {
-            FMLLog.log.error("Error starting SplashProgress:", e);
+            e.printStackTrace();
             disableSplash(e);
         }
 
@@ -525,7 +540,7 @@ public class SplashProgress
                 }
                 catch (LWJGLException e)
                 {
-                    FMLLog.log.error("Error setting GL context:", e);
+                    e.printStackTrace();
                     throw new RuntimeException(e);
                 }
                 glClearColor((float)((backgroundColor >> 16) & 0xFF) / 0xFF, (float)((backgroundColor >> 8) & 0xFF) / 0xFF, (float)(backgroundColor & 0xFF) / 0xFF, 1);
@@ -552,7 +567,7 @@ public class SplashProgress
                 }
                 catch (LWJGLException e)
                 {
-                    FMLLog.log.error("Error releasing GL context:", e);
+                    e.printStackTrace();
                     throw new RuntimeException(e);
                 }
                 finally
@@ -617,7 +632,7 @@ public class SplashProgress
         }
         catch (LWJGLException e)
         {
-            FMLLog.log.error("Error setting GL context:", e);
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
@@ -638,7 +653,7 @@ public class SplashProgress
         }
         catch (LWJGLException e)
         {
-            FMLLog.log.error("Error releasing GL context:", e);
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
         lock.unlock();
@@ -660,7 +675,7 @@ public class SplashProgress
         }
         catch (Exception e)
         {
-            FMLLog.log.error("Error finishing SplashProgress:", e);
+            e.printStackTrace();
             disableSplash(e);
         }
     }
@@ -707,14 +722,20 @@ public class SplashProgress
         enabled = false;
         config.setProperty("enabled", "false");
 
-        try (FileWriter w = new FileWriter(configFile))
+        FileWriter w = null;
+        try
         {
+            w = new FileWriter(configFile);
             config.store(w, "Splash screen properties");
         }
         catch(IOException e)
         {
             FMLLog.log.error("Could not save the splash.properties file", e);
             return false;
+        }
+        finally
+        {
+            IOUtils.closeQuietly(w);
         }
         return true;
     }
@@ -819,7 +840,7 @@ public class SplashProgress
             }
             catch(IOException e)
             {
-                FMLLog.log.error("Error reading texture from file: {}", location, e);
+                e.printStackTrace();
                 throw new RuntimeException(e);
             }
             finally

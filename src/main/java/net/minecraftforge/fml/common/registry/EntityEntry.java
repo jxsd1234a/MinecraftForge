@@ -19,12 +19,14 @@
 package net.minecraftforge.fml.common.registry;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
+import com.google.common.base.Throwables;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityList.EntityEggInfo;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.registries.IForgeRegistryEntry.Impl;
 
 public class EntityEntry extends Impl<EntityEntry>
@@ -52,6 +54,10 @@ public class EntityEntry extends Impl<EntityEntry>
         {
             throw new RuntimeException("Invalid class " + this.cls + " no constructor taking " + World.class.getName());
         }
+        catch (SecurityException e)
+        {
+            Throwables.propagate(e);
+        }
     }
 
     public Class<? extends Entity> getEntityClass(){ return this.cls; }
@@ -73,7 +79,7 @@ public class EntityEntry extends Impl<EntityEntry>
         }
         catch (Exception e)
         {
-            FMLLog.log.error("Error creating entity.", e);
+            e.printStackTrace();
             return null;
         }
     }

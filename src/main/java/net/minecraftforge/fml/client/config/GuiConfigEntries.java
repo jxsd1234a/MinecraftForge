@@ -128,7 +128,8 @@ public class GuiConfigEntries extends GuiListExtended
                     }
                     catch (Throwable e)
                     {
-                        FMLLog.log.error("There was a critical error instantiating the custom IConfigEntry for config element {}.", configElement.getName(), e);
+                        FMLLog.log.fatal("There was a critical error instantiating the custom IConfigEntry for config element {}.", configElement.getName());
+                        e.printStackTrace();
                     }
                 else if (configElement.isProperty())
                 {
@@ -1623,7 +1624,7 @@ public class GuiConfigEntries extends GuiListExtended
         public abstract boolean saveConfigElement();
 
         @Override
-        public void updatePosition(int p_178011_1_, int p_178011_2_, int p_178011_3_, float partial){}
+        public void func_192633_a(int p_178011_1_, int p_178011_2_, int p_178011_3_, float partial){}
 
         @Override
         public boolean enabled()

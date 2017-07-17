@@ -22,6 +22,8 @@ package net.minecraftforge.fml.common.network.internal;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
+import org.apache.logging.log4j.Level;
+
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.entity.Entity;
@@ -41,6 +43,8 @@ import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.common.registry.IThrowableEntity;
 import net.minecraftforge.fml.common.registry.EntityRegistry.EntityRegistration;
 
+import com.google.common.base.Throwables;
+
 public class EntitySpawnHandler extends SimpleChannelInboundHandler<FMLMessage.EntityMessage> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, final EntityMessage msg) throws Exception
@@ -52,7 +56,14 @@ public class EntitySpawnHandler extends SimpleChannelInboundHandler<FMLMessage.E
         }
         else
         {
-            thread.addScheduledTask(() -> EntitySpawnHandler.this.process(msg));
+            thread.addScheduledTask(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    EntitySpawnHandler.this.process(msg);
+                }
+            });
         }
     }
 
@@ -128,10 +139,10 @@ public class EntitySpawnHandler extends SimpleChannelInboundHandler<FMLMessage.E
                 ((IEntityAdditionalSpawnData) entity).readSpawnData(spawnMsg.dataStream);
             }
             wc.addEntityToWorld(spawnMsg.entityId, entity);
-        }
-        catch (Exception e)
+        } catch (Exception e)
         {
-            throw new RuntimeException("A severe problem occurred during the spawning of an entity at (" + spawnMsg.rawX + ", " + spawnMsg.rawY + ", " + spawnMsg.rawZ + ")", e);
+            FMLLog.log.error("A severe problem occurred during the spawning of an entity at ({}, {}, {})", spawnMsg.rawX, spawnMsg.rawY, spawnMsg.rawZ, e);
+            throw Throwables.propagate(e);
         }
     }
 

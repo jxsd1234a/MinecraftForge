@@ -19,7 +19,7 @@
 
 package net.minecraftforge.common.model;
 
-import java.util.Optional;
+import com.google.common.base.Optional;
 
 /*
  * Represents the dynamic information associated with the model.

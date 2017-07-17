@@ -48,7 +48,14 @@ public class CapabilityAnimation
 
             @Override
             public void readNBT(Capability<IAnimationStateMachine> capability, IAnimationStateMachine instance, EnumFacing side, NBTBase nbt) {}
-        }, AnimationStateMachine::getMissing);
+        }, new Callable<IAnimationStateMachine>()
+        {
+            @Override
+            public IAnimationStateMachine call() throws Exception
+            {
+                return AnimationStateMachine.getMissing();
+            }
+        });
     }
 
     public static class DefaultItemAnimationCapabilityProvider implements ICapabilityProvider

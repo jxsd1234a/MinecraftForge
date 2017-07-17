@@ -130,9 +130,9 @@ public class Capability<T>
         }
         catch (Exception e)
         {
-            Throwables.throwIfUnchecked(e);
-            throw new RuntimeException(e);
+            Throwables.propagate(e);
         }
+        return null;
     }
 
     /**

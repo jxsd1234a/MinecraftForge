@@ -76,7 +76,14 @@ public class CapabilityItemHandler
                     }
                 }
             }
-        }, ItemStackHandler::new);
+        }, new Callable<ItemStackHandler>()
+        {
+            @Override
+            public ItemStackHandler call() throws Exception
+            {
+                return new ItemStackHandler();
+            }
+        });
     }
 
 }

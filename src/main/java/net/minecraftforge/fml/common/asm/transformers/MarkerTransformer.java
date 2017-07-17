@@ -28,7 +28,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -41,6 +40,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterables;
@@ -74,7 +74,7 @@ public class MarkerTransformer implements IClassTransformer
         {
             rulesResource = Resources.getResource(rulesFile);
         }
-        Resources.readLines(rulesResource, StandardCharsets.UTF_8, new LineProcessor<Void>()
+        Resources.readLines(rulesResource, Charsets.UTF_8, new LineProcessor<Void>()
         {
             @Override
             public Void getResult()

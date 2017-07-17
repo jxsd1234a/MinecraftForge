@@ -61,6 +61,7 @@ import net.minecraftforge.fml.common.ModContainer.Disableable;
 import net.minecraftforge.fml.common.versioning.ComparableVersion;
 import static net.minecraft.util.text.TextFormatting.*;
 
+import org.apache.logging.log4j.Level;
 import org.lwjgl.input.Mouse;
 
 import com.google.common.base.Strings;
@@ -281,7 +282,15 @@ public class GuiModList extends GuiScreen
                         try
                         {
                             IModGuiFactory guiFactory = FMLClientHandler.instance().getGuiFactoryFor(selectedMod);
-                            GuiScreen newScreen = guiFactory.createConfigGui(this);
+                            GuiScreen newScreen = null;
+                            try
+                            {
+                                newScreen = guiFactory.createConfigGui(this);
+                            }
+                            catch (AbstractMethodError error)
+                            {
+                                newScreen = guiFactory.mainConfigGuiClass().getConstructor(GuiScreen.class).newInstance(this);
+                            }
                             this.mc.displayGuiScreen(newScreen);
                         }
                         catch (Exception e)
@@ -417,7 +426,14 @@ public class GuiModList extends GuiScreen
             configModButton.enabled = false;
             if (guiFactory != null)
             {
-                configModButton.enabled = guiFactory.hasConfigGui();
+                try
+                {
+                    configModButton.enabled = guiFactory.hasConfigGui();
+                }
+                catch(AbstractMethodError error)
+                {
+                    configModButton.enabled = guiFactory.mainConfigGuiClass() != null;
+                }
             }
             lines.add(selectedMod.getMetadata().name);
             lines.add(String.format("Version: %s (%s)", selectedMod.getDisplayVersion(), selectedMod.getVersion()));
@@ -511,11 +527,7 @@ public class GuiModList extends GuiScreen
                 }
 
                 ITextComponent chat = ForgeHooks.newChatWithLinks(line, false);
-                int maxTextLength = this.listWidth - 8;
-                if (maxTextLength >= 0)
-                {
-                    ret.addAll(GuiUtilRenderComponents.splitText(chat, maxTextLength, GuiModList.this.fontRenderer, false, true));
-                }
+                ret.addAll(GuiUtilRenderComponents.splitText(chat, this.listWidth-8, GuiModList.this.fontRenderer, false, true));
             }
             return ret;
         }

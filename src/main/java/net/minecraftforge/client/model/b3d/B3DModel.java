@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Nullable;
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Matrix4f;
 import javax.vecmath.Quat4f;
@@ -50,9 +49,9 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.function.Function;
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import java.util.Optional;
+import com.google.common.base.Optional;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -134,7 +133,7 @@ public class B3DModel
             return res;
         }
 
-        private final List<Texture> textures = new ArrayList<>();
+        private final List<Texture> textures = new ArrayList<Texture>();
 
         private Texture getTexture(int texture)
         {
@@ -147,25 +146,27 @@ public class B3DModel
             return textures.get(texture);
         }
 
-        private final List<Brush> brushes = new ArrayList<>();
+        private final List<Brush> brushes = new ArrayList<Brush>();
 
-        private @Nullable Brush getBrush(int brush) throws IOException
+        private Brush getBrush(int brush)
         {
             if(brush > brushes.size())
             {
-                throw new IOException(String.format("brush %s is out of range", brush));
+                logger.error("brush {} is out of range", brush);
+                return null;
             }
             else if(brush == -1) return null;
             return brushes.get(brush);
         }
 
-        private final List<Vertex> vertices = new ArrayList<>();
+        private final List<Vertex> vertices = new ArrayList<Vertex>();
 
-        private Vertex getVertex(int vertex) throws IOException
+        private Vertex getVertex(int vertex)
         {
             if(vertex > vertices.size())
             {
-                throw new IOException(String.format("vertex %s is out of range", vertex));
+                logger.error("vertex {} is out of range", vertex);
+                return null;
             }
             return vertices.get(vertex);
         }
@@ -198,10 +199,11 @@ public class B3DModel
             buf.position(start);
             buf.get(tmp);
             buf.get();
-            return new String(tmp, "UTF8");
+            String ret =  new String(tmp, "UTF8");
+            return ret;
         }
 
-        private Deque<Integer> limitStack = new ArrayDeque<>();
+        private Deque<Integer> limitStack = new ArrayDeque<Integer>();
 
         private void pushLimit()
         {
@@ -221,7 +223,7 @@ public class B3DModel
             if(version / 100 > Parser.version / 100)
                 throw new IOException("Unsupported major model version: " + ((float)version / 100));
             if(version % 100 > Parser.version % 100)
-                logger.warn(String.format("Minor version difference in model: %s", ((float)version / 100)));
+                logger.warn(String.format("Minor version difference in model: ", ((float)version / 100)));
             List<Texture> textures = Collections.emptyList();
             List<Brush> brushes = Collections.emptyList();
             Node<?> root = null;
@@ -236,16 +238,13 @@ public class B3DModel
             }
             dump("}");
             popLimit();
-            if (root == null) {
-                throw new IOException("not found the root node in the model");
-            }
             return new B3DModel(textures, brushes, root, meshes.build());
         }
 
         private List<Texture> texs() throws IOException
         {
             chunk("TEXS");
-            List<Texture> ret = new ArrayList<>();
+            List<Texture> ret = new ArrayList<Texture>();
             while(buf.hasRemaining())
             {
                 String path = readString();
@@ -265,7 +264,7 @@ public class B3DModel
         private List<Brush> brus() throws IOException
         {
             chunk("BRUS");
-            List<Brush> ret = new ArrayList<>();
+            List<Brush> ret = new ArrayList<Brush>();
             int n_texs = buf.getInt();
             while(buf.hasRemaining())
             {
@@ -274,7 +273,7 @@ public class B3DModel
                 float shininess = buf.getFloat();
                 int blend = buf.getInt();
                 int fx = buf.getInt();
-                List<Texture> textures = new ArrayList<>();
+                List<Texture> textures = new ArrayList<Texture>();
                 for(int i = 0; i < n_texs; i++) textures.add(getTexture(buf.getInt()));
                 ret.add(new Brush(name, color, shininess, blend, fx, textures));
             }
@@ -287,7 +286,7 @@ public class B3DModel
         private List<Vertex> vrts() throws IOException
         {
             chunk("VRTS");
-            List<Vertex> ret = new ArrayList<>();
+            List<Vertex> ret = new ArrayList<Vertex>();
             int flags = buf.getInt();
             int tex_coord_sets = buf.getInt();
             int tex_coord_set_size = buf.getInt();
@@ -321,7 +320,7 @@ public class B3DModel
                         tex_coords[i] = new Vector4f(buf.getFloat(), buf.getFloat(), buf.getFloat(), buf.getFloat());
                         break;
                     default:
-                        logger.error(String.format("Unsupported number of texture coords: %s", tex_coord_set_size));
+                        logger.error(String.format("Unsupported number of texture coords: ", tex_coord_set_size));
                         tex_coords[i] = new Vector4f(0, 0, 0, 1);
                     }
                 }
@@ -337,7 +336,7 @@ public class B3DModel
         private List<Face> tris() throws IOException
         {
             chunk("TRIS");
-            List<Face> ret = new ArrayList<>();
+            List<Face> ret = new ArrayList<Face>();
             int brush_id = buf.getInt();
             while(buf.hasRemaining())
             {
@@ -355,7 +354,7 @@ public class B3DModel
             readHeader();
             dump("MESH(brush = " + brush_id + ") {");
             vrts();
-            List<Face> ret = new ArrayList<>();
+            List<Face> ret = new ArrayList<Face>();
             while(buf.hasRemaining())
             {
                 readHeader();
@@ -369,7 +368,7 @@ public class B3DModel
         private List<Pair<Vertex, Float>> bone() throws IOException
         {
             chunk("BONE");
-            List<Pair<Vertex, Float>> ret = new ArrayList<>();
+            List<Pair<Vertex, Float>> ret = new ArrayList<Pair<Vertex, Float>>();
             while(buf.hasRemaining())
             {
                 ret.add(Pair.of(getVertex(buf.getInt()), buf.getFloat()));
@@ -379,12 +378,12 @@ public class B3DModel
             return ret;
         }
 
-        private final Deque<Table<Integer, Optional<Node<?>>, Key>> animations = new ArrayDeque<>();
+        private final Deque<Table<Integer, Optional<Node<?>>, Key>> animations = new ArrayDeque<Table<Integer, Optional<Node<?>>, Key>>();
 
         private Map<Integer, Key> keys() throws IOException
         {
             chunk("KEYS");
-            Map<Integer, Key> ret = new HashMap<>();
+            Map<Integer, Key> ret = new HashMap<Integer, Key>();
             int flags = buf.getInt();
             Vector3f pos = null, scale = null;
             Quat4f rot = null;
@@ -423,7 +422,7 @@ public class B3DModel
                         else key = new Key(key.getPos(), key.getScale(), oldKey.getRot());
                     }
                 }
-                animations.peek().put(frame, Optional.empty(), key);
+                animations.peek().put(frame, Optional.<Node<?>>absent(), key);
                 ret.put(frame, key);
             }
             dump("KEYS([(" + Joiner.on("), (").withKeyValueSeparator(" -> ").join(ret) + ")])");
@@ -445,12 +444,12 @@ public class B3DModel
         private Node<?> node() throws IOException
         {
             chunk("NODE");
-            animations.push(HashBasedTable.create());
+            animations.push(HashBasedTable.<Integer, Optional<Node<?>>, Key>create());
             Triple<Integer, Integer, Float> animData = null;
             Pair<Brush, List<Face>> mesh = null;
             List<Pair<Vertex, Float>> bone = null;
-            Map<Integer, Key> keys = new HashMap<>();
-            List<Node<?>> nodes = new ArrayList<>();
+            Map<Integer, Key> keys = new HashMap<Integer, Key>();
+            List<Node<?>> nodes = new ArrayList<Node<?>>();
             String name = readString();
             Vector3f pos = new Vector3f(buf.getFloat(), buf.getFloat(), buf.getFloat());
             Vector3f scale = new Vector3f(buf.getFloat(), buf.getFloat(), buf.getFloat());
@@ -482,7 +481,7 @@ public class B3DModel
             {
                 for(Table.Cell<Integer, Optional<Node<?>>, Key> key : keyData.cellSet())
                 {
-                    animations.peek().put(key.getRowKey(), Optional.of(key.getColumnKey().orElse(node)), key.getValue());
+                    animations.peek().put(key.getRowKey(), key.getColumnKey().or(Optional.of(node)), key.getValue());
                 }
             }
             else
@@ -645,12 +644,10 @@ public class B3DModel
     public static class Vertex
     {
         private final Vector3f pos;
-        @Nullable
         private final Vector3f normal;
-        @Nullable
         private final Vector4f color;
         private final Vector4f[] texCoords;
-        public Vertex(Vector3f pos, @Nullable Vector3f normal, @Nullable Vector4f color, Vector4f[] texCoords)
+        public Vertex(Vector3f pos, Vector3f normal, Vector4f color, Vector4f[] texCoords)
         {
             this.pos = pos;
             this.normal = normal;
@@ -710,13 +707,11 @@ public class B3DModel
             return pos;
         }
 
-        @Nullable
         public Vector3f getNormal()
         {
             return normal;
         }
 
-        @Nullable
         public Vector4f getColor()
         {
             return color;
@@ -737,16 +732,15 @@ public class B3DModel
     public static class Face
     {
         private final Vertex v1, v2, v3;
-        @Nullable
         private final Brush brush;
         private final Vector3f normal;
 
-        public Face(Vertex v1, Vertex v2, Vertex v3, @Nullable Brush brush)
+        public Face(Vertex v1, Vertex v2, Vertex v3, Brush brush)
         {
             this(v1, v2, v3, brush, getNormal(v1, v2, v3));
         }
 
-        public Face(Vertex v1, Vertex v2, Vertex v3, @Nullable Brush brush, Vector3f normal)
+        public Face(Vertex v1, Vertex v2, Vertex v3, Brush brush, Vector3f normal)
         {
             this.v1 = v1;
             this.v2 = v2;
@@ -770,7 +764,6 @@ public class B3DModel
             return v3;
         }
 
-        @Nullable
         public Brush getBrush()
         {
             return brush;
@@ -802,33 +795,27 @@ public class B3DModel
 
     public static class Key
     {
-        @Nullable
         private final Vector3f pos;
-        @Nullable
         private final Vector3f scale;
-        @Nullable
         private final Quat4f rot;
 
-        public Key(@Nullable Vector3f pos, @Nullable Vector3f scale, @Nullable Quat4f rot)
+        public Key(Vector3f pos, Vector3f scale, Quat4f rot)
         {
             this.pos = pos;
             this.scale = scale;
             this.rot = rot;
         }
 
-        @Nullable
         public Vector3f getPos()
         {
             return pos;
         }
 
-        @Nullable
         public Vector3f getScale()
         {
             return scale;
         }
 
-        @Nullable
         public Quat4f getRot()
         {
             return rot;
@@ -896,15 +883,13 @@ public class B3DModel
         private final Vector3f scale;
         private final Quat4f rot;
         private final ImmutableMap<String, Node<?>> nodes;
-        @Nullable
         private Animation animation;
         private final K kind;
-        @Nullable
         private Node<? extends IKind<?>> parent;
 
         public static <K extends IKind<K>> Node<K> create(String name, Vector3f pos, Vector3f scale, Quat4f rot, List<Node<?>> nodes, K kind)
         {
-            return new Node<>(name, pos, scale, rot, nodes, kind);
+            return new Node<K>(name, pos, scale, rot, nodes, kind);
         }
 
         public Node(String name, Vector3f pos, Vector3f scale, Quat4f rot, List<Node<?>> nodes, K kind)
@@ -925,7 +910,7 @@ public class B3DModel
         public void setAnimation(Animation animation)
         {
             this.animation = animation;
-            Deque<Node<?>> q = new ArrayDeque<>(nodes.values());
+            Deque<Node<?>> q = new ArrayDeque<Node<?>>(nodes.values());
 
             while(!q.isEmpty())
             {
@@ -941,7 +926,7 @@ public class B3DModel
             ImmutableTable.Builder<Integer, Node<?>, Key> builder = ImmutableTable.builder();
             for(Table.Cell<Integer, Optional<Node<?>>, Key> key : keyData.cellSet())
             {
-                builder.put(key.getRowKey(), key.getColumnKey().orElse(this), key.getValue());
+                builder.put(key.getRowKey(), key.getColumnKey().or(this), key.getValue());
             }
             setAnimation(new Animation(animData.getLeft(), animData.getMiddle(), animData.getRight(), builder.build()));
         }
@@ -986,13 +971,11 @@ public class B3DModel
             return nodes;
         }
 
-        @Nullable
         public Animation getAnimation()
         {
             return animation;
         }
 
-        @Nullable
         public Node<? extends IKind<?>> getParent()
         {
             return parent;
@@ -1034,7 +1017,7 @@ public class B3DModel
         private final ImmutableList<Face> faces;
         //private final ImmutableList<Bone> bones;
 
-        private Set<Node<Bone>> bones = new HashSet<>();
+        private Set<Node<Bone>> bones = new HashSet<Node<Bone>>();
 
         private ImmutableMultimap<Vertex, Pair<Float, Node<Bone>>> weightMap = ImmutableMultimap.of();
 
@@ -1088,7 +1071,7 @@ public class B3DModel
         public void setParent(Node<Mesh> parent)
         {
             this.parent = parent;
-            Deque<Node<?>> queue = new ArrayDeque<>(parent.getNodes().values());
+            Deque<Node<?>> queue = new ArrayDeque<Node<?>>(parent.getNodes().values());
             while(!queue.isEmpty())
             {
                 Node<?> node = queue.pop();

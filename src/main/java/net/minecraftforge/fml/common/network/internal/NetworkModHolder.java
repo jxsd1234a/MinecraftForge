@@ -33,6 +33,8 @@ import net.minecraftforge.fml.common.versioning.InvalidVersionSpecificationExcep
 import net.minecraftforge.fml.common.versioning.VersionRange;
 import net.minecraftforge.fml.relauncher.Side;
 
+import org.apache.logging.log4j.Level;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;

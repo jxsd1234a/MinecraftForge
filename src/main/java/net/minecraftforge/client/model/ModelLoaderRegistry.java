@@ -211,12 +211,11 @@ public class ModelLoaderRegistry
 
     public static IModel getMissingModel()
     {
-        final ModelLoader loader = VanillaLoader.INSTANCE.getLoader();
-        if(loader == null)
+        if(ModelLoader.VanillaLoader.INSTANCE.getLoader() == null)
         {
             throw new IllegalStateException("Using ModelLoaderRegistry too early.");
         }
-        return loader.getMissingModel();
+        return ModelLoader.VanillaLoader.INSTANCE.getLoader().getMissingModel();
     }
 
     static IModel getMissingModel(ResourceLocation location, Throwable cause)

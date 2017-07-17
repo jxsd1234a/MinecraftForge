@@ -127,9 +127,14 @@ public class GenDiffSet {
             return new byte[0];
         }
 
-        try (InputStream sourceZipInputStream = sourceZip.getInputStream(entry))
+        InputStream sourceZipInputStream = sourceZip.getInputStream(entry);
+        try
         {
             return ByteStreams.toByteArray(sourceZipInputStream);
+        }
+        finally
+        {
+            IOUtils.closeQuietly(sourceZipInputStream);
         }
     }
 }

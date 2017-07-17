@@ -186,38 +186,40 @@ public class ModelAnimationDebug
         public static void registerItems(RegistryEvent.Register<Item> event)
         {
             event.getRegistry().register(
-            new ItemBlock(TEST_BLOCK)
-            {
-                @Override
-                public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable NBTTagCompound nbt)
+                new ItemBlock(TEST_BLOCK)
                 {
-                    return new ItemAnimationHolder();
-                }
-            }.setRegistryName(TEST_BLOCK.getRegistryName())
+                    @Override
+                    public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable NBTTagCompound nbt)
+                    {
+                        return new ItemAnimationHolder();
+                    }
+                }.setRegistryName(TEST_BLOCK.getRegistryName())
             );
         }
+    }
 
-        @SubscribeEvent
-        public static void registerModels(ModelRegistryEvent event)
+
+    @SubscribeEvent
+    public void registerModels(ModelRegistryEvent event)
+    {
+        B3DLoader.INSTANCE.addDomain(MODID);
+        ModelLoader.setCustomModelResourceLocation(TEST_ITEM, 0, new ModelResourceLocation(TEST_ITEM.getRegistryName(), "inventory"));
+        ClientRegistry.bindTileEntitySpecialRenderer(Chest.class, new AnimationTESR<Chest>()
         {
-            B3DLoader.INSTANCE.addDomain(MODID);
-            ModelLoader.setCustomModelResourceLocation(TEST_ITEM, 0, new ModelResourceLocation(TEST_ITEM.getRegistryName(), "inventory"));
-            ClientRegistry.bindTileEntitySpecialRenderer(Chest.class, new AnimationTESR<Chest>()
+            @Override
+            public void handleEvents(Chest chest, float time, Iterable<Event> pastEvents)
             {
-                @Override
-                public void handleEvents(Chest chest, float time, Iterable<Event> pastEvents)
-                {
-                    chest.handleEvents(time, pastEvents);
-                }
-            });
-            String entityName = MODID + ":entity_chest";
-            //EntityRegistry.registerGlobalEntityID(EntityChest.class, entityName, EntityRegistry.findGlobalUniqueEntityId());
-            EntityRegistry.registerModEntity(new ResourceLocation(entityName), EntityChest.class, entityName, 0, ModelAnimationDebug.instance, 64, 20, true, 0xFFAAAA00, 0xFFDDDD00);
-            RenderingRegistry.registerEntityRenderingHandler(EntityChest.class, new IRenderFactory<EntityChest>()
+                chest.handleEvents(time, pastEvents);
+            }
+        });
+        String entityName = MODID + ":entity_chest";
+        //EntityRegistry.registerGlobalEntityID(EntityChest.class, entityName, EntityRegistry.findGlobalUniqueEntityId());
+        EntityRegistry.registerModEntity(new ResourceLocation(entityName), EntityChest.class, entityName, 0, ModelAnimationDebug.instance, 64, 20, true, 0xFFAAAA00, 0xFFDDDD00);
+        RenderingRegistry.registerEntityRenderingHandler(EntityChest.class, new IRenderFactory<EntityChest>()
+        {
+            @SuppressWarnings("deprecation")
+            public Render<EntityChest> createRenderFor(RenderManager manager)
             {
-                @SuppressWarnings("deprecation")
-                public Render<EntityChest> createRenderFor(RenderManager manager)
-                {
                 /*model = ModelLoaderRegistry.getModel(new ResourceLocation(ModelLoaderRegistryDebug.MODID, "block/chest.b3d"));
                 if(model instanceof IRetexturableModel)
                 {
@@ -227,24 +229,23 @@ public class ModelAnimationDebug
                 {
                     model = ((IModelCustomData)model).process(ImmutableMap.of("mesh", "[\"Base\", \"Lid\"]"));
                 }*/
-                    ResourceLocation location = new ModelResourceLocation(new ResourceLocation(MODID, blockName), "entity");
-                    return new RenderLiving<EntityChest>(manager, new net.minecraftforge.client.model.animation.AnimationModelBase<EntityChest>(location, new VertexLighterSmoothAo(Minecraft.getMinecraft().getBlockColors()))
+                ResourceLocation location = new ModelResourceLocation(new ResourceLocation(MODID, blockName), "entity");
+                return new RenderLiving<EntityChest>(manager, new net.minecraftforge.client.model.animation.AnimationModelBase<EntityChest>(location, new VertexLighterSmoothAo(Minecraft.getMinecraft().getBlockColors()))
+                {
+                    @Override
+                    public void handleEvents(EntityChest chest, float time, Iterable<Event> pastEvents)
                     {
-                        @Override
-                        public void handleEvents(EntityChest chest, float time, Iterable<Event> pastEvents)
-                        {
-                            chest.handleEvents(time, pastEvents);
-                        }
-                    }, 0.5f)
+                        chest.handleEvents(time, pastEvents);
+                    }
+                }, 0.5f)
+                {
+                    protected ResourceLocation getEntityTexture(EntityChest entity)
                     {
-                        protected ResourceLocation getEntityTexture(EntityChest entity)
-                        {
-                            return TextureMap.LOCATION_BLOCKS_TEXTURE;
-                        }
-                    };
-                }
-            });
-        }
+                        return TextureMap.LOCATION_BLOCKS_TEXTURE;
+                    }
+                };
+            }
+        });
     }
 
     public static abstract class CommonProxy

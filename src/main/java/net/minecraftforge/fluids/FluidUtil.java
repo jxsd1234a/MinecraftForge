@@ -71,46 +71,31 @@ public class FluidUtil
      */
     public static boolean interactWithFluidHandler(@Nonnull EntityPlayer player, @Nonnull EnumHand hand, @Nonnull World world, @Nonnull BlockPos pos, @Nullable EnumFacing side)
     {
-        Preconditions.checkNotNull(world);
-        Preconditions.checkNotNull(pos);
-
-        IFluidHandler blockFluidHandler = getFluidHandler(world, pos, side);
-        return blockFluidHandler != null && interactWithFluidHandler(player, hand, blockFluidHandler);
-    }
-
-    /**
-     * Used to handle the common case of a player holding a fluid item and right-clicking on a fluid handler.
-     * First it tries to fill the item from the handler,
-     * if that action fails then it tries to drain the item into the handler.
-     * Automatically updates the item in the player's hand and stashes any extra items created.
-     *
-     * @param player  The player doing the interaction between the item and fluid handler.
-     * @param hand    The player's hand that is holding an item that should interact with the fluid handler.
-     * @param handler The fluid handler.
-     * @return true if the interaction succeeded and updated the item held by the player, false otherwise.
-     */
-    public static boolean interactWithFluidHandler(@Nonnull EntityPlayer player, @Nonnull EnumHand hand, @Nonnull IFluidHandler handler)
-    {
         Preconditions.checkNotNull(player);
         Preconditions.checkNotNull(hand);
-        Preconditions.checkNotNull(handler);
+        Preconditions.checkNotNull(world);
+        Preconditions.checkNotNull(pos);
 
         ItemStack heldItem = player.getHeldItem(hand);
         if (!heldItem.isEmpty())
         {
-            IItemHandler playerInventory = player.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
-            if (playerInventory != null)
+            IFluidHandler blockFluidHandler = getFluidHandler(world, pos, side);
+            if (blockFluidHandler != null)
             {
-                FluidActionResult fluidActionResult = tryFillContainerAndStow(heldItem, handler, playerInventory, Integer.MAX_VALUE, player);
-                if (!fluidActionResult.isSuccess())
+                IItemHandler playerInventory = player.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+                if (playerInventory != null)
                 {
-                    fluidActionResult = tryEmptyContainerAndStow(heldItem, handler, playerInventory, Integer.MAX_VALUE, player);
-                }
+                    FluidActionResult fluidActionResult = tryFillContainerAndStow(heldItem, blockFluidHandler, playerInventory, Integer.MAX_VALUE, player);
+                    if (!fluidActionResult.isSuccess())
+                    {
+                        fluidActionResult = tryEmptyContainerAndStow(heldItem, blockFluidHandler, playerInventory, Integer.MAX_VALUE, player);
+                    }
 
-                if (fluidActionResult.isSuccess())
-                {
-                    player.setHeldItem(hand, fluidActionResult.getResult());
-                    return true;
+                    if (fluidActionResult.isSuccess())
+                    {
+                        player.setHeldItem(hand, fluidActionResult.getResult());
+                        return true;
+                    }
                 }
             }
         }

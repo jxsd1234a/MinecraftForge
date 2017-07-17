@@ -46,6 +46,8 @@ import net.minecraftforge.fml.common.discovery.ModDiscoverer;
 import net.minecraftforge.fml.common.event.FMLInterModComms;
 import net.minecraftforge.fml.common.event.FMLLoadEvent;
 import net.minecraftforge.fml.common.event.FMLModIdMappingEvent;
+import net.minecraftforge.fml.common.functions.ArtifactVersionNameFunction;
+import net.minecraftforge.fml.common.functions.ModIdFunction;
 import net.minecraftforge.fml.common.registry.*;
 import net.minecraftforge.fml.common.toposort.ModSorter;
 import net.minecraftforge.fml.common.toposort.ModSortingException;
@@ -62,7 +64,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Level;
 
 import com.google.common.base.CharMatcher;
-import java.util.function.Function;
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
@@ -172,6 +174,7 @@ public class Loader
     private File forcedModFile;
     private ModDiscoverer discoverer;
     private ProgressBar progressBar;
+    public final boolean java8;
 
     public static Loader instance()
     {
@@ -198,6 +201,14 @@ public class Loader
 
     private Loader()
     {
+        String[] ver = System.getProperty("java.version").split("\\.");
+        int major = Integer.parseInt(ver[1]);
+        java8 = major > 7;
+        if (!java8)
+        {
+            FMLLog.log.fatal("The game is not running with Java 8. Forge recommends Java 8 for maximum compatibility with mods");
+        }
+
         modClassLoader = new ModClassLoader(getClass().getClassLoader());
         if (mccversion !=null && !mccversion.equals(MC_VERSION))
         {
@@ -246,7 +257,7 @@ public class Loader
                     wrongMinecraftExceptions.add(ret);
                     continue;
                 }
-                Map<String,ArtifactVersion> names = Maps.uniqueIndex(mod.getRequirements(), ArtifactVersion::getLabel);
+                Map<String,ArtifactVersion> names = Maps.uniqueIndex(mod.getRequirements(), new ArtifactVersionNameFunction());
                 Set<ArtifactVersion> versionMissingMods = Sets.newHashSet();
 
                 Set<String> missingMods = Sets.difference(names.keySet(), modVersions.keySet());
@@ -392,17 +403,19 @@ public class Loader
 
         FMLLog.log.info("Found {} mods from the command line. Injecting into mod discoverer", ModListHelper.additionalMods.size());
         FMLLog.log.info("Searching {} for mods", canonicalModsDir.getAbsolutePath());
-        discoverer.findModDirMods(canonicalModsDir, ModListHelper.additionalMods.values().toArray(new File[0]));
+        //discoverer.findModDirMods(canonicalModsDir, ModListHelper.additionalMods.values().toArray(new File[0]));
+        discoverer.checkModDirMods(canonicalModsDir, ModListHelper.additionalMods.values().toArray(new File[0]));
         File versionSpecificModsDir = new File(canonicalModsDir,mccversion);
+        /*
         if (versionSpecificModsDir.isDirectory())
         {
             FMLLog.log.info("Also searching {} for mods", versionSpecificModsDir);
             discoverer.findModDirMods(versionSpecificModsDir);
         }
-
+		*/
         mods.addAll(discoverer.identifyMods());
         identifyDuplicates(mods);
-        namedMods = Maps.uniqueIndex(mods, ModContainer::getModId);
+        namedMods = Maps.uniqueIndex(mods, new ModIdFunction());
         FMLLog.log.info("Forge Mod Loader has identified {} mod{} to load", mods.size(), mods.size() != 1 ? "s" : "");
         return discoverer;
     }
@@ -519,7 +532,7 @@ public class Loader
     {
         modController = new LoadController(this);
         mods = Lists.newArrayList(containers);
-        namedMods = Maps.uniqueIndex(mods, ModContainer::getModId);
+        namedMods = Maps.uniqueIndex(mods, new ModIdFunction());
         modController.transition(LoaderState.LOADING, false);
         modController.transition(LoaderState.CONSTRUCTING, false);
         ObjectHolderRegistry.INSTANCE.findObjectHolders(new ASMDataTable());
@@ -544,6 +557,7 @@ public class Loader
         ModAPIManager.INSTANCE.manageAPI(modClassLoader, discoverer);
         disableRequestedMods();
         modController.distributeStateMessage(FMLLoadEvent.class);
+        checkJavaCompatibility();
         sortModList();
         ModAPIManager.INSTANCE.cleanupAPIContainers(modController.getActiveModList());
         ModAPIManager.INSTANCE.cleanupAPIContainers(mods);
@@ -569,6 +583,17 @@ public class Loader
         modController.transition(LoaderState.CONSTRUCTING, false);
         modController.distributeStateMessage(LoaderState.CONSTRUCTING, modClassLoader, discoverer.getASMTable(), reverseDependencies);
 
+        List<ModContainer> mods = Lists.newArrayList();
+        mods.addAll(getActiveModList());
+        Collections.sort(mods, new Comparator<ModContainer>()
+        {
+            @Override
+            public int compare(ModContainer o1, ModContainer o2)
+            {
+                return o1.getModId().compareTo(o2.getModId());
+            }
+        });
+
         FMLLog.log.debug("Mod signature data");
         FMLLog.log.debug(" \tValid Signatures:");
         for (ModContainer mod : getActiveModList())
@@ -590,6 +615,24 @@ public class Loader
         modController.transition(LoaderState.PREINITIALIZATION, false);
     }
 
+
+    private void checkJavaCompatibility()
+    {
+        if (java8) return;
+        List<ModContainer> j8mods = Lists.newArrayList();
+        for (ModContainer mc : getActiveModList())
+        {
+            if (mc.getClassVersion() >= 52)
+            {
+                j8mods.add(mc);
+            }
+        }
+        if (!j8mods.isEmpty())
+        {
+            throw new Java8VersionException(j8mods);
+        }
+    }
+
     public void preinitializeMods()
     {
         if (!modController.isInState(LoaderState.PREINITIALIZATION))
@@ -602,7 +645,7 @@ public class Loader
         ItemStackHolderInjector.INSTANCE.findHolders(discoverer.getASMTable());
         CapabilityManager.INSTANCE.injectCapabilities(discoverer.getASMTable());
         modController.distributeStateMessage(LoaderState.PREINITIALIZATION, discoverer.getASMTable(), canonicalConfigDir);
-        GameData.fireRegistryEvents(rl -> !rl.equals(GameData.RECIPES));
+        GameData.fireRegistryEvents();
         FMLCommonHandler.instance().fireSidedRegistryEvents();
         ObjectHolderRegistry.INSTANCE.applyObjectHolders();
         ItemStackHolderInjector.INSTANCE.inject();
@@ -639,7 +682,14 @@ public class Loader
         modStates.putAll(sysPropertyStateList);
         FMLLog.log.debug("After merging, found state information for {} mods", modStates.size());
 
-        Map<String, Boolean> isEnabled = Maps.transformValues(modStates, Boolean::parseBoolean);
+        Map<String, Boolean> isEnabled = Maps.transformValues(modStates, new Function<String, Boolean>()
+        {
+            @Override
+            public Boolean apply(String input)
+            {
+                return Boolean.parseBoolean(input);
+            }
+        });
 
         for (Map.Entry<String, Boolean> entry : isEnabled.entrySet())
         {

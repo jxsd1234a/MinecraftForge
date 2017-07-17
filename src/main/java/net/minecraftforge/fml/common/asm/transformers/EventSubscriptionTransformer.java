@@ -40,8 +40,9 @@ import static org.objectweb.asm.Type.VOID_TYPE;
 import static org.objectweb.asm.Type.BOOLEAN_TYPE;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 
+import java.util.List;
+
 import net.minecraft.launchwrapper.IClassTransformer;
-import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.fml.common.eventhandler.Event;
 
 import org.objectweb.asm.ClassReader;
@@ -93,7 +94,7 @@ public class EventSubscriptionTransformer implements IClassTransformer
         }
         catch (Exception e)
         {
-            FMLLog.log.error("Error building events.", e);
+            e.printStackTrace();
         }
 
         return bytes;

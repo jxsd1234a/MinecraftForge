@@ -54,6 +54,7 @@ import net.minecraft.client.renderer.block.model.ModelBlock;
 import net.minecraft.client.renderer.block.model.ModelBlockDefinition;
 import net.minecraft.client.renderer.block.model.ModelBlockDefinition.MissingVariantException;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.client.renderer.block.model.ModelRotation;
 import net.minecraft.client.renderer.block.model.MultipartBakedModel;
 import net.minecraft.client.renderer.block.model.SimpleBakedModel;
 import net.minecraft.client.renderer.block.model.Variant;
@@ -63,6 +64,7 @@ import net.minecraft.client.renderer.block.model.multipart.Multipart;
 import net.minecraft.client.renderer.block.model.multipart.Selector;
 import net.minecraft.client.renderer.block.statemap.BlockStateMapper;
 import net.minecraft.client.renderer.block.statemap.IStateMapper;
+import net.minecraft.client.renderer.texture.ITextureMapPopulator;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -76,6 +78,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.IRegistry;
 import net.minecraftforge.client.model.animation.AnimationItemOverrideList;
+import net.minecraftforge.client.model.animation.IAnimatedModel;
 import net.minecraftforge.client.model.animation.ModelBlockAnimation;
 import net.minecraftforge.common.ForgeModContainer;
 import net.minecraftforge.common.ForgeVersion;
@@ -101,10 +104,10 @@ import net.minecraftforge.registries.IRegistryDelegate;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.function.Function;
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
-import java.util.Optional;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -121,12 +124,11 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public final class ModelLoader extends ModelBakery
 {
+    private static boolean firstLoad = Boolean.parseBoolean(System.getProperty("fml.skipFirstModelBake", "true"));
     private final Map<ModelResourceLocation, IModel> stateModels = Maps.newHashMap();
-    // TODO: nothing adds to missingVariants, remove it?
     private final Set<ModelResourceLocation> missingVariants = Sets.newHashSet();
     private final Map<ResourceLocation, Exception> loadingExceptions = Maps.newHashMap();
     private IModel missingModel = null;
@@ -148,7 +150,6 @@ public final class ModelLoader extends ModelBakery
         ModelLoaderRegistry.clearModelCache(manager);
     }
 
-    @Nonnull
     @Override
     public IRegistry<ModelResourceLocation, IBakedModel> setupModelRegistry()
     {
@@ -165,12 +166,28 @@ public final class ModelLoader extends ModelBakery
         textures.remove(TextureMap.LOCATION_MISSING_TEXTURE);
         textures.addAll(LOCATIONS_BUILTIN_TEXTURES);
 
-        textureMap.loadSprites(resourceManager, map -> textures.forEach(map::registerSprite));
+        textureMap.loadSprites(resourceManager, map ->
+        {
+            for (ResourceLocation t : textures)
+            {
+                map.registerSprite(t);
+            }
+        });
 
         IBakedModel missingBaked = missingModel.bake(missingModel.getDefaultState(), DefaultVertexFormats.ITEM, DefaultTextureGetter.INSTANCE);
         Map<IModel, IBakedModel> bakedModels = Maps.newHashMap();
         HashMultimap<IModel, ModelResourceLocation> models = HashMultimap.create();
         Multimaps.invertFrom(Multimaps.forMap(stateModels), models);
+
+        if (firstLoad)
+        {
+            firstLoad = false;
+            for (ModelResourceLocation mrl : stateModels.keySet())
+            {
+                bakedRegistry.putObject(mrl, missingBaked);
+            }
+            return bakedRegistry;
+        }
 
         ProgressBar bakeBar = ProgressManager.push("ModelLoader: baking", models.keySet().size());
 
@@ -225,7 +242,7 @@ public final class ModelLoader extends ModelBakery
     }
 
     @Override
-    protected void registerVariant(@Nullable ModelBlockDefinition definition, ModelResourceLocation location)
+    protected void registerVariant(ModelBlockDefinition definition, ModelResourceLocation location)
     {
         IModel model;
         try
@@ -265,7 +282,7 @@ public final class ModelLoader extends ModelBakery
         {
             storeException(location, new Exception("Could not load model definition for variant " + location, exception));
         }
-        return new ModelBlockDefinition(new ArrayList<>());
+        return new ModelBlockDefinition(new ArrayList<ModelBlockDefinition>());
     }
 
     @Override
@@ -279,8 +296,22 @@ public final class ModelLoader extends ModelBakery
 
         registerVariantNames();
 
-        List<Item> items = Lists.newArrayList(Iterables.filter(Item.REGISTRY, item -> item.getRegistryName() != null));
-        Collections.sort(items, (i1, i2) -> i1.getRegistryName().toString().compareTo(i2.getRegistryName().toString()));
+        List<Item> items = Lists.newArrayList(Iterables.filter(Item.REGISTRY, new Predicate<Item>()
+        {
+            @Override
+            public boolean apply(Item item)
+            {
+                return item.getRegistryName() != null;
+            }
+        }));
+        Collections.sort(items, new Comparator<Item>()
+        {
+            @Override
+            public int compare(Item i1, Item i2)
+            {
+                return i1.getRegistryName().toString().compareTo(i2.getRegistryName().toString());
+            }
+        });
 
         ProgressBar itemBar = ProgressManager.push("ModelLoader: items", items.size());
         for(Item item : items)
@@ -411,7 +442,7 @@ public final class ModelLoader extends ModelBakery
         return new ResourceLocation(model.getResourceDomain(), model.getResourcePath() + ".json");
     }
 
-    private final class VanillaModelWrapper implements IModel
+    private final class VanillaModelWrapper implements IRetexturableModel, IModelSimpleProperties, IModelUVLock, IAnimatedModel
     {
         private final ResourceLocation location;
         private final ModelBlock model;
@@ -518,8 +549,8 @@ public final class ModelLoader extends ModelBakery
 
             ItemCameraTransforms transforms = model.getAllTransforms();
             Map<TransformType, TRSRTransformation> tMap = Maps.newHashMap();
-            tMap.putAll(PerspectiveMapWrapper.getTransforms(transforms));
-            tMap.putAll(PerspectiveMapWrapper.getTransforms(state));
+            tMap.putAll(IPerspectiveAwareModel.MapWrapper.getTransforms(transforms));
+            tMap.putAll(IPerspectiveAwareModel.MapWrapper.getTransforms(state));
             IModelState perState = new SimpleModelState(ImmutableMap.copyOf(tMap));
 
             if(hasItemModel(model))
@@ -532,7 +563,7 @@ public final class ModelLoader extends ModelBakery
 
         private IBakedModel bakeNormal(ModelBlock model, IModelState perState, final IModelState modelState, List<TRSRTransformation> newTransforms, final VertexFormat format, final Function<ResourceLocation, TextureAtlasSprite> bakedTextureGetter, boolean uvLocked)
         {
-            final TRSRTransformation baseState = modelState.apply(Optional.empty()).orElse(TRSRTransformation.identity());
+            final TRSRTransformation baseState = modelState.apply(Optional.<IModelPart>absent()).or(TRSRTransformation.identity());
             TextureAtlasSprite particle = bakedTextureGetter.apply(new ResourceLocation(model.resolveTextureName("particle")));
             SimpleBakedModel.Builder builder = (new SimpleBakedModel.Builder(model, model.createOverrides())).setTexture(particle);
             for(int i = 0; i < model.getElements().size(); i++)
@@ -565,12 +596,12 @@ public final class ModelLoader extends ModelBakery
                 }
             }
 
-            return new PerspectiveMapWrapper(builder.makeBakedModel(), perState)
+            return new IPerspectiveAwareModel.MapWrapper(builder.makeBakedModel(), perState)
             {
                 private final ItemOverrideList overrides = new AnimationItemOverrideList(VanillaModelWrapper.this, modelState, format, bakedTextureGetter, super.getOverrides());
 
                 @Override
-                public List<BakedQuad> getQuads(@Nullable IBlockState state, @Nullable EnumFacing side, long rand)
+                public List<BakedQuad> getQuads(IBlockState state, EnumFacing side, long rand)
                 {
                     if(state instanceof IExtendedBlockState)
                     {
@@ -645,7 +676,13 @@ public final class ModelLoader extends ModelBakery
             //Remove any faces that use a null texture, this is for performance reasons, also allows some cool layering stuff.
             for (BlockPart part : newModel.getElements())
             {
-                part.mapFaces.entrySet().removeIf(entry -> removed.contains(entry.getValue().texture));
+                Iterator<Entry<EnumFacing, BlockPartFace>> itr = part.mapFaces.entrySet().iterator();
+                while (itr.hasNext())
+                {
+                    Entry<EnumFacing, BlockPartFace> entry = itr.next();
+                    if (removed.contains(entry.getValue().texture))
+                        itr.remove();
+                }
             }
 
             return new VanillaModelWrapper(location, newModel, uvlock, animation);
@@ -656,9 +693,15 @@ public final class ModelLoader extends ModelBakery
         {
             if(animation.getClips().containsKey(name))
             {
-                return Optional.ofNullable(animation.getClips().get(name));
+                return Optional.<IClip>fromNullable(animation.getClips().get(name));
             }
-            return Optional.empty();
+            return Optional.absent();
+        }
+
+        @Override
+        public IModelState getDefaultState()
+        {
+            return ModelRotation.X0_Y0;
         }
 
         @Override
@@ -701,9 +744,9 @@ public final class ModelLoader extends ModelBakery
     private static final class WeightedRandomModel implements IModel
     {
         private final List<Variant> variants;
-        private final List<ResourceLocation> locations = new ArrayList<>();
+        private final List<ResourceLocation> locations = new ArrayList<ResourceLocation>();
         private final Set<ResourceLocation> textures = Sets.newHashSet();
-        private final List<IModel> models = new ArrayList<>();
+        private final List<IModel> models = new ArrayList<IModel>();
         private final IModelState defaultState;
 
         public WeightedRandomModel(ResourceLocation parent, VariantList variants) throws Exception
@@ -748,7 +791,7 @@ public final class ModelLoader extends ModelBakery
                 // FIXME: log this?
                 IModel missing = ModelLoaderRegistry.getMissingModel();
                 models.add(missing);
-                builder.add(Pair.of(missing, TRSRTransformation.identity()));
+                builder.add(Pair.<IModel, IModelState>of(missing, TRSRTransformation.identity()));
             }
 
             defaultState = new MultiModelState(builder.build());
@@ -851,7 +894,6 @@ public final class ModelLoader extends ModelBakery
     {
         INSTANCE;
 
-        @Nullable
         private ModelLoader loader;
         private LoadingCache<BakedModelCacheKey, IBakedModel> modelCache = CacheBuilder.newBuilder().maximumSize(50).expireAfterWrite(100, TimeUnit.MILLISECONDS).build(new CacheLoader<BakedModelCacheKey, IBakedModel>() {
             @Override
@@ -866,7 +908,6 @@ public final class ModelLoader extends ModelBakery
             this.loader = loader;
         }
 
-        @Nullable
         ModelLoader getLoader()
         {
             return loader;
@@ -933,7 +974,7 @@ public final class ModelLoader extends ModelBakery
         }
 
         @Override
-        public boolean load(IResourceManager manager, ResourceLocation location, Function<ResourceLocation, TextureAtlasSprite> textureGetter)
+        public boolean load(IResourceManager manager, ResourceLocation location)
         {
             BufferedImage image = new BufferedImage(this.getIconWidth(), this.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
             Graphics2D graphics = image.createGraphics();
@@ -1000,7 +1041,7 @@ public final class ModelLoader extends ModelBakery
             {
                 ModelResourceLocation location = (ModelResourceLocation)entry.getKey();
                 IBakedModel model = modelRegistry.getObject(location);
-                if(model == null || model == missingModel || model instanceof FancyMissingModel.BakedModel)
+                if(model == null || model == missingModel)
                 {
                     String domain = entry.getKey().getResourceDomain();
                     Integer errorCountBox = modelErrors.get(domain);
@@ -1139,7 +1180,14 @@ public final class ModelLoader extends ModelBakery
      * Helper method for registering all itemstacks for given item to map to universal bucket model.
      */
     public static void setBucketModelDefinition(Item item) {
-        ModelLoader.setCustomMeshDefinition(item, stack -> ModelDynBucket.LOCATION);
+        ModelLoader.setCustomMeshDefinition(item, new ItemMeshDefinition()
+        {
+            @Override
+            public ModelResourceLocation getModelLocation(@Nonnull ItemStack stack)
+            {
+                return ModelDynBucket.LOCATION;
+            }
+        });
         ModelBakery.registerItemVariants(item, ModelDynBucket.LOCATION);
     }
 
@@ -1244,6 +1292,18 @@ public final class ModelLoader extends ModelBakery
         }
 
         // FIXME: represent selectors as dependencies?
+        @Override
+        public Collection<ResourceLocation> getDependencies()
+        {
+            return ImmutableSet.of();
+        }
+
+        @Override
+        public Collection<ResourceLocation> getTextures()
+        {
+            return ImmutableSet.of();
+        }
+
         // FIXME
         @Override
         public IBakedModel bake(IModelState state, VertexFormat format, Function<ResourceLocation, TextureAtlasSprite> bakedTextureGetter)
@@ -1257,6 +1317,12 @@ public final class ModelLoader extends ModelBakery
 
             IBakedModel bakedModel = builder.makeMultipartModel();
             return bakedModel;
+        }
+
+        @Override
+        public IModelState getDefaultState()
+        {
+            return TRSRTransformation.identity();
         }
     }
 }

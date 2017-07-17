@@ -24,6 +24,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -36,13 +37,16 @@ import net.minecraft.command.EntitySelector;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.FurnaceRecipes;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.item.crafting.ShapedRecipes;
 import net.minecraft.item.crafting.ShapelessRecipes;
 import net.minecraft.nbt.JsonToNBT;
+import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTException;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
@@ -52,8 +56,6 @@ import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.IChunkGenerator;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.common.crafting.CraftingHelper.ShapedPrimer;
-import net.minecraftforge.event.ForgeEventFactory;
-import net.minecraftforge.event.furnace.FurnaceFuelBurnTimeEvent;
 import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.fml.common.IFuelHandler;
 import net.minecraftforge.fml.common.IWorldGenerator;
@@ -63,11 +65,15 @@ import net.minecraftforge.registries.IForgeRegistryEntry;
 import net.minecraftforge.registries.RegistryManager;
 import net.minecraftforge.fml.common.IEntitySelectorFactory;
 
+import org.apache.logging.log4j.Level;
+
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.primitives.Ints;
 
 import javax.annotation.Nonnull;
 
@@ -171,7 +177,14 @@ public class GameRegistry
     private static void computeSortedGeneratorList()
     {
         ArrayList<IWorldGenerator> list = Lists.newArrayList(worldGenerators);
-        list.sort(Comparator.comparingInt(o -> worldGeneratorIndex.get(o)));
+        Collections.sort(list, new Comparator<IWorldGenerator>()
+        {
+            @Override
+            public int compare(IWorldGenerator o1, IWorldGenerator o2)
+            {
+                return Ints.compare(worldGeneratorIndex.get(o1), worldGeneratorIndex.get(o2));
+            }
+        });
         sortedGeneratorList = ImmutableList.copyOf(list);
     }
 
@@ -231,29 +244,12 @@ public class GameRegistry
         TileEntity.register(key, tileEntityClass);
     }
 
-    /**
-     * @deprecated set your item's {@link Item#getItemBurnTime(ItemStack)} or subscribe to {@link FurnaceFuelBurnTimeEvent} instead.
-     */
-    @Deprecated
     public static void registerFuelHandler(IFuelHandler handler)
     {
         fuelHandlers.add(handler);
     }
 
-    /**
-     * @deprecated use {@link ForgeEventFactory#getItemBurnTime(ItemStack)}
-     */
-    @Deprecated
     public static int getFuelValue(@Nonnull ItemStack itemStack)
-    {
-        return ForgeEventFactory.getItemBurnTime(itemStack);
-    }
-
-    /**
-     * @deprecated use {@link ForgeEventFactory#getItemBurnTime(ItemStack)}
-     */
-    @Deprecated
-    public static int getFuelValueLegacy(@Nonnull ItemStack itemStack)
     {
         int fuelValue = 0;
         for (IFuelHandler handler : fuelHandlers)
@@ -343,13 +339,24 @@ public class GameRegistry
         ItemStack is = new ItemStack(item, stackSize, meta);
         if (!Strings.isNullOrEmpty(nbtString))
         {
+            NBTBase nbttag = null;
             try
             {
-                is.setTagCompound(JsonToNBT.getTagFromJson(nbtString));
-            }
-            catch (NBTException e)
+                nbttag = JsonToNBT.getTagFromJson(nbtString);
+            } catch (NBTException e)
             {
-                throw new RuntimeException("Encountered an exception parsing ItemStack NBT string " + nbtString, e);
+                FMLLog.log.warn("Encountered an exception parsing ItemStack NBT string {}", nbtString, e);
+                Throwables.throwIfUnchecked(e);
+                throw new RuntimeException(e);
+            }
+            if (!(nbttag instanceof NBTTagCompound))
+            {
+                FMLLog.log.warn("Unexpected NBT string - multiple values {}", nbtString);
+                throw new RuntimeException("Invalid NBT JSON");
+            }
+            else
+            {
+                is.setTagCompound((NBTTagCompound)nbttag);
             }
         }
         return is;

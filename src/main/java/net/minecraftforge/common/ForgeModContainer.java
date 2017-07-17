@@ -17,6 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * This software is provided under the terms of the Minecraft Forge Public
+ * License v1.0.
+ */
+
 package net.minecraftforge.common;
 
 import net.minecraft.util.ResourceLocation;
@@ -31,6 +36,7 @@ import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -115,6 +121,7 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
     public static boolean forgeLightPipelineEnabled = true;
     public static boolean replaceVanillaBucketModel = true;
     public static boolean zoomInMissingModelTextInGui = false;
+    public static long java8Reminder = 0;
     public static boolean disableStairSlabCulling = false; // Also known as the "DontCullStairsBecauseIUseACrappyTexturePackThatBreaksBasicBlockShapesSoICantTrustBasicBlockCulling" flag
     public static boolean alwaysSetupTerrainOffThread = false; // In RenderGlobal.setupTerrain, always force the chunk render updates to be queued to the thread
     public static int dimensionUnloadQueueDelay = 0;
@@ -199,7 +206,6 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
         if (config.getCategory(CATEGORY_GENERAL).containsKey("defaultSpawnFuzz")) config.getCategory(CATEGORY_GENERAL).remove("defaultSpawnFuzz");
         if (config.getCategory(CATEGORY_GENERAL).containsKey("spawnHasFuzz")) config.getCategory(CATEGORY_GENERAL).remove("spawnHasFuzz");
         if (config.getCategory(CATEGORY_GENERAL).containsKey("disableStitchedFileSaving")) config.getCategory(CATEGORY_GENERAL).remove("disableStitchedFileSaving");
-        if (config.getCategory(CATEGORY_CLIENT).containsKey("java8Reminder")) config.getCategory(CATEGORY_CLIENT).remove("java8Reminder");
 
         prop = config.get(CATEGORY_GENERAL, "disableVersionCheck", false);
         prop.setComment("Set to true to disable Forge's version check mechanics. Forge queries a small json file on our server for version information. For more details see the ForgeVersion class in our github.");
@@ -316,6 +322,12 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
         prop.setLanguageKey("forge.configgui.zoomInMissingModelTextInGui");
         propOrder.add(prop.getName());
 
+        prop = config.get(Configuration.CATEGORY_CLIENT, "java8Reminder", 0,
+                "The timestamp of the last reminder to update to Java 8 in number of milliseconds since January 1, 1970, 00:00:00 GMT. Nag will show only once every 24 hours. To disable it set this to some really high number.");
+        java8Reminder = prop.getLong(0);
+        prop.setLanguageKey("forge.configgui.java8Reminder");
+        propOrder.add(prop.getName());
+
         prop = config.get(Configuration.CATEGORY_CLIENT, "disableStairSlabCulling", false,
                 "Disable culling of hidden faces next to stairs and slabs. Causes extra rendering, but may fix some resource packs that exploit this vanilla mechanic.");
         disableStairSlabCulling = prop.getBoolean(false);
@@ -335,6 +347,13 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
         {
             config.save();
         }
+    }
+
+    public static void updateNag()
+    {
+        Property prop = config.get(Configuration.CATEGORY_CLIENT, "java8Reminder", java8Reminder);
+        prop.set((new Date()).getTime());
+        config.save();
     }
 
     /**
@@ -401,7 +420,14 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
         for (ASMData asm : evt.getASMHarvestedData().getAll(ICrashCallable.class.getName().replace('.', '/')))
             all.add(asm.getClassName());
 
-        all.removeIf(cls -> !cls.startsWith("net/minecraft/") && !cls.startsWith("net/minecraftforge/"));
+        Iterator<String> itr = all.iterator();
+        while (itr.hasNext())
+        {
+            String cls = itr.next();
+            if (!cls.startsWith("net/minecraft/") &&
+                !cls.startsWith("net/minecraftforge/"))
+                itr.remove();
+        }
 
         log.debug("Preloading CrashReport Classes");
         Collections.sort(all); //Sort it because I like pretty output ;)
@@ -414,7 +440,7 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
             }
             catch (Exception e)
             {
-                log.error("Could not find class for name '{}'.", name, e);
+                e.printStackTrace();
             }
         }
 
@@ -513,7 +539,6 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
         OreDictionary.rebakeMap();
         StatList.reinit();
         Ingredient.invalidateAll();
-        FMLCommonHandler.instance().reloadSearchTrees();
     }
 
 

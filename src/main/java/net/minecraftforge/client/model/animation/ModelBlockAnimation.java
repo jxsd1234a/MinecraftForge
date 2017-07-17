@@ -55,7 +55,7 @@ import net.minecraftforge.common.model.animation.JointClips;
 import net.minecraftforge.common.util.JsonUtils;
 import net.minecraftforge.fml.common.FMLLog;
 
-import java.util.Optional;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -80,7 +80,7 @@ public class ModelBlockAnimation
         this.clips = clips;
     }
 
-    public ImmutableMap<String, ? extends IClip> getClips()
+    public ImmutableMap<String, MBClip> getClips()
     {
         return clips;
     }
@@ -447,7 +447,7 @@ public class ModelBlockAnimation
         @Override
         public Optional<? extends IJoint> getParent()
         {
-            return Optional.empty();
+            return Optional.absent();
         }
 
         public String getName()
@@ -575,7 +575,12 @@ public class ModelBlockAnimation
             //String json = mbaGson.toJson(mba);
             return mba;
         }
-        catch(IOException | JsonParseException e)
+        catch(IOException e)
+        {
+            FMLLog.log.error("Exception loading vanilla model animation {}, skipping", armatureLocation, e);
+            return defaultModelBlockAnimation;
+        }
+        catch(JsonParseException e)
         {
             FMLLog.log.error("Exception loading vanilla model animation {}, skipping", armatureLocation, e);
             return defaultModelBlockAnimation;

@@ -23,6 +23,8 @@ import java.util.List;
 
 import net.minecraftforge.fml.common.ModContainer;
 
+import com.google.common.base.Throwables;
+
 public enum ContainerType
 {
     JAR(JarDiscoverer.class),
@@ -36,9 +38,9 @@ public enum ContainerType
         {
             this.discoverer = discovererClass.newInstance();
         }
-        catch (ReflectiveOperationException e)
+        catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw Throwables.propagate(e);
         }
     }
 

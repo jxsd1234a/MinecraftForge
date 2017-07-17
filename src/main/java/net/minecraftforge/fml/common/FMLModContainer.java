@@ -20,7 +20,6 @@ package net.minecraftforge.fml.common;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -56,6 +55,7 @@ import net.minecraftforge.fml.common.versioning.VersionRange;
 import net.minecraftforge.fml.relauncher.Side;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,8 +63,9 @@ import org.apache.logging.log4j.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import java.util.function.Function;
+import com.google.common.base.Function;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -319,16 +320,22 @@ public class FMLModContainer implements ModContainer
                 if (propsFile.exists() && propsFile.isFile())
                 {
                     version = new Properties();
-                    try (FileInputStream fis = new FileInputStream(propsFile))
+                    FileInputStream fis = new FileInputStream(propsFile);
+                    try
                     {
                         version.load(fis);
+                    }
+                    finally
+                    {
+                        IOUtils.closeQuietly(fis);
                     }
                 }
             }
             return version;
         }
-        catch (IOException e)
+        catch (Exception e)
         {
+            Throwables.propagateIfPossible(e);
             modLog.trace("Failed to find a usable version.properties file");
             return null;
         }
@@ -439,8 +446,22 @@ public class FMLModContainer implements ModContainer
     {
         SetMultimap<String, ASMData> annotations = asmDataTable.getAnnotationsFor(this);
 
-        parseSimpleFieldAnnotation(annotations, Instance.class.getName(), ModContainer::getMod);
-        parseSimpleFieldAnnotation(annotations, Metadata.class.getName(), ModContainer::getMetadata);
+        parseSimpleFieldAnnotation(annotations, Instance.class.getName(), new Function<ModContainer, Object>()
+        {
+            @Override
+            public Object apply(ModContainer mc)
+            {
+                return mc.getMod();
+            }
+        });
+        parseSimpleFieldAnnotation(annotations, Metadata.class.getName(), new Function<ModContainer, Object>()
+        {
+            @Override
+            public Object apply(ModContainer mc)
+            {
+                return mc.getMetadata();
+            }
+        });
     }
 
     private void parseSimpleFieldAnnotation(SetMultimap<String, ASMData> annotations, String annotationClassName, Function<ModContainer, Object> retriever) throws IllegalAccessException
@@ -492,8 +513,9 @@ public class FMLModContainer implements ModContainer
                     isStatic = Modifier.isStatic(f.getModifiers());
                     injectedMod = retriever.apply(mc);
                 }
-                catch (ReflectiveOperationException e)
+                catch (Exception e)
                 {
+                    Throwables.propagateIfPossible(e);
                     modLog.warn("Attempting to load @{} in class {} for {} and failing", annotationName, targets.getClassName(), mc.getModId(), e);
                 }
             }

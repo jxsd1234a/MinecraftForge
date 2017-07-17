@@ -364,14 +364,16 @@ public class Loader
 
         FMLLog.getLogger().log(Level.INFO, "Found {} mods from the command line. Injecting into mod discoverer",ModListHelper.additionalMods.size());
         FMLLog.info("Searching %s for mods", canonicalModsDir.getAbsolutePath());
-        discoverer.findModDirMods(canonicalModsDir, ModListHelper.additionalMods.values().toArray(new File[0]));
+        //discoverer.findModDirMods(canonicalModsDir, ModListHelper.additionalMods.values().toArray(new File[0]));
+        discoverer.checkModDirMods(canonicalModsDir, ModListHelper.additionalMods.values().toArray(new File[0]));
         File versionSpecificModsDir = new File(canonicalModsDir,mccversion);
+        /*
         if (versionSpecificModsDir.isDirectory())
         {
             FMLLog.info("Also searching %s for mods", versionSpecificModsDir);
             discoverer.findModDirMods(versionSpecificModsDir);
         }
-
+		*/
         mods.addAll(discoverer.identifyMods());
         identifyDuplicates(mods);
         namedMods = Maps.uniqueIndex(mods, new ModIdFunction());

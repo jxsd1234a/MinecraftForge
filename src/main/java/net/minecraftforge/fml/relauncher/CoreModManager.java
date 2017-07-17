@@ -38,6 +38,7 @@ import com.google.common.io.Files;
 import net.minecraft.launchwrapper.ITweaker;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraft.launchwrapper.LaunchClassLoader;
+import net.minecraftforge.common.ReflectionAPI;
 import net.minecraftforge.fml.common.asm.ASMTransformerWrapper;
 import net.minecraftforge.fml.common.asm.transformers.ModAccessTransformer;
 import net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker;
@@ -233,6 +234,7 @@ public class CoreModManager {
         FMLRelaunchLog.fine("All fundamental core mods are successfully located");
         // Now that we have the root plugins loaded - lets see what else might
         // be around
+        /*
         String commandLineCoremods = System.getProperty("fml.coreMods.load", "");
         for (String coreModClassName : commandLineCoremods.split(","))
         {
@@ -243,6 +245,7 @@ public class CoreModManager {
             FMLRelaunchLog.info("Found a command line coremod : %s", coreModClassName);
             loadCoreMod(classLoader, coreModClassName, null);
         }
+        */
         discoverCoreMods(mcDir, classLoader);
 
     }
@@ -313,12 +316,13 @@ public class CoreModManager {
         }
         File[] coreModList = coreMods.listFiles(ff);
         File versionedModDir = new File(coreMods, FMLInjectionData.mccversion);
+        /*
         if (versionedModDir.isDirectory())
         {
             File[] versionedCoreMods = versionedModDir.listFiles(ff);
             coreModList = ObjectArrays.concat(coreModList, versionedCoreMods, File.class);
         }
-
+		*/
         coreModList = ObjectArrays.concat(coreModList, ModListHelper.additionalMods.values().toArray(new File[0]), File.class);
 
         coreModList = FileListHelper.sortFileList(coreModList);
@@ -331,6 +335,18 @@ public class CoreModManager {
             String fmlCorePlugin;
             try
             {
+				if (true == coreMod.isDirectory())
+            	{
+                    FMLRelaunchLog.fine("Check Coremod.Skip directory %s.", coreMod.getName());
+                    continue;
+            	}
+            	if (false == ReflectionAPI.checkPermission(classLoader, coreMod))
+            	{
+                    FMLRelaunchLog.fine("Adding %s to the list of things to skip. you dont have permission to use it.", coreMod.getName());
+                    ignoredModFiles.add(coreMod.getName());
+                    continue;
+            	}
+            	//add end
                 jar = new JarFile(coreMod);
                 if (jar.getManifest() == null)
                 {

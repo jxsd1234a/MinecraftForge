@@ -1,0 +1,11 @@
+--- ../src-base/minecraft/net/minecraft/client/renderer/entity/RenderEnderman.java
++++ ../src-work/minecraft/net/minecraft/client/renderer/entity/RenderEnderman.java
+@@ -17,7 +17,7 @@
+     private final ModelEnderman field_77078_a;
+     private final Random field_77077_b = new Random();
+ 
+-    public RenderEnderman(RenderManager p_i46182_1_)
++    public RenderEnderman(RenderManager renderManagerIn)
+     {
+         super(p_i46182_1_, new ModelEnderman(0.0F), 0.5F);
+         this.field_77078_a = (ModelEnderman)super.field_77045_g;

@@ -4,7 +4,7 @@
  
      public StringTranslate()
      {
-+        InputStream inputstream = StringTranslate.class.getResourceAsStream("/assets/minecraft/lang/en_US.lang");
++        InputStream inputstream = StringTranslate.class.getResourceAsStream("/assets/minecraft/lang/zh_CN.lang");
 +        inject(this, inputstream);
 +    }
 +
